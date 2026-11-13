@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
+import 'add_flat_page.dart';
+
 void main() {
   usePathUrlStrategy();
   runApp(const FindAFlatApp());
@@ -15,19 +17,29 @@ class FindAFlatApp extends StatelessWidget {
   /// Injected in tests; the real app uses a default client.
   final http.Client? client;
 
-  Route<void> _homeRoute() => MaterialPageRoute(
-        settings: const RouteSettings(name: '/home'),
-        builder: (_) => HomePage(client: client ?? http.Client()),
-      );
+  Route<void> _route(RouteSettings settings) {
+    final c = client ?? http.Client();
+    final Widget page = switch (settings.name) {
+      '/flats/new' => AddFlatPage(client: c),
+      _ => HomePage(client: c),
+    };
+    // Unknown paths show the list, so the URL bar always matches the page.
+    final name = settings.name == '/flats/new' ? '/flats/new' : '/home';
+    return MaterialPageRoute(
+      settings: RouteSettings(name: name),
+      builder: (_) => page,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
-      // Only one page for now: every path shows the list, with no back button.
-      onGenerateInitialRoutes: (_) => [_homeRoute()],
-      onGenerateRoute: (_) => _homeRoute(),
+      // Open the page for the URL directly, with no back stack under it.
+      onGenerateInitialRoutes: (initial) =>
+          [_route(RouteSettings(name: initial))],
+      onGenerateRoute: _route,
     );
   }
 }
@@ -78,7 +90,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Find a flat')),
+      appBar: AppBar(
+        title: const Text('Find a flat'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
+            child: const Text('Add property'),
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Flat>>(
         future: _flats,
         builder: (context, snapshot) {
