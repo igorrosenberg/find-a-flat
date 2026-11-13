@@ -308,12 +308,20 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
               minLines: 4,
               maxLines: 12,
               maxLength: notesMax,
+              // Enforce the limit without showing a character counter.
+              buildCounter: (
+                _, {
+                required currentLength,
+                required isFocused,
+                maxLength,
+              }) => null,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'Viewing notes, questions for the agent…',
               ),
               onChanged: (_) => setState(() {}),
             ),
+            const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton(
