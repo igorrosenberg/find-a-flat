@@ -10,7 +10,7 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 only the list page exists, showing the rows from `GET /api/flats`.
+Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
 
 | Page | URL | What it does |
 | --- | --- | --- |

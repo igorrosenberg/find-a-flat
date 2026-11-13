@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
 import 'add_flat_page.dart';
 import 'flat_detail.dart';
+import 'map_page.dart';
 import 'top_bar.dart';
 
 void main() {
@@ -32,6 +34,7 @@ class FindAFlatApp extends StatelessWidget {
     // Unknown paths show the list until their pages land.
     final Widget page = switch (settings.name) {
       '/flats/new' => AddFlatPage(client: c),
+      '/map' => MapPage(client: c),
       _ when detail != null => FlatDetailPage(
         id: int.parse(detail[1]!),
         client: c,
@@ -68,6 +71,8 @@ class Flat {
       price = json['price'] as int?,
       sizeSqft = json['size_sqft'] as int?,
       distanceM = json['distance_m'] as int?,
+      lat = (json['lat'] as num?)?.toDouble(),
+      lng = (json['lng'] as num?)?.toDouble(),
       discarded = (json['discarded'] as int? ?? 0) == 1;
 
   final int id;
@@ -75,7 +80,12 @@ class Flat {
   final int? price;
   final int? sizeSqft;
   final int? distanceM;
+  final double? lat;
+  final double? lng;
   final bool discarded;
+
+  /// Where to pin the flat on a map, or null if it has no coordinates.
+  LatLng? get point => lat == null || lng == null ? null : LatLng(lat!, lng!);
 }
 
 /// Price is always shown in crore with two decimals, never lakh.

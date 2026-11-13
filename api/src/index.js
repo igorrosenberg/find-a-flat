@@ -40,7 +40,7 @@ export default {
 export async function listFlats(db) {
   const { results } = await db
     .prepare(
-      'SELECT id, name, price, size_sqft, distance_m, discarded FROM flat ORDER BY created_at DESC, id DESC',
+      'SELECT id, name, price, size_sqft, distance_m, lat, lng, discarded FROM flat ORDER BY created_at DESC, id DESC',
     )
     .all();
   return results ?? [];
