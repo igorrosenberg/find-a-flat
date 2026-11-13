@@ -21,7 +21,8 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 
 ### Property list (home)
 
-1. Shows a table with columns Name, Price, Size (sq ft), Distance to Deodar Street.
+1. Shows a table with columns Name, Price, Size (sq ft), B(B), Distance to Deodar Street. B(B) is bedrooms(bathrooms), e.g. "3(2)", taken from the property's Bedrooms and Bathrooms fields; an unknown number shows as a dash ("3(–)"), and a single dash when both are unknown. Sorting by B(B) orders by bedrooms, then bathrooms.
+1. On a phone (narrower than 600 px), each property is a compact row: the name, then price, size, B(B) and distance on one line, e.g. "₹0.95 Cr  ·  1100 sq ft  ·  3(2)  ·  1.8 km".
 2. Clicking anywhere on a row opens that property's detail page.
 3. Discarded properties stay in the table but are shown struck through and greyed out.
 4. Clicking a column header sorts by that column; default sort is newest first.
@@ -50,7 +51,7 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 
 1. Shows every property with coordinates as a pin, plus a distinct marker for Deodar Street.
 2. The map zooms to fit all pins on load.
-3. Clicking a pin opens a popup with name, price, size and a link to the detail page.
+3. Clicking a pin opens a popup with name, price, size, B(B) (e.g. "B(B) 3(2)") and a link to the detail page.
 4. Discarded properties show as grey pins, hidden when the list's hide-discarded toggle is on.
 5. An Add property button floats over the bottom-left corner of the map and opens the add form.
 
@@ -101,7 +102,7 @@ A single Cloudflare Worker serves the Flutter web app as static assets and a sma
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
 - **Access:** everything behind one shared passphrase (see Passphrase), no user accounts.
 - **Deploy:** the Check workflow runs on every pull request; the Deploy workflow builds the app, applies D1 migrations and runs `wrangler deploy` on every push to `main`. Fits in the Workers and D1 free tiers.
-- **Devices:** usable on a phone; the table scrolls horizontally on narrow screens.
+- **Devices:** usable on a phone; below 600 px wide the list shows compact rows instead of the table, and the table scrolls horizontally if it is still too wide.
 
 ## Defaults assumed
 
