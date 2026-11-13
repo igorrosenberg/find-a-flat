@@ -246,7 +246,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const TopBar(onForgetPassphrase: forgetPassphrase),
+      appBar: const TopBar(),
       body: _body(context),
     );
   }
