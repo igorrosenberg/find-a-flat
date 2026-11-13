@@ -5,6 +5,8 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import 'add_flat_page.dart';
+import 'flat_detail.dart';
 import 'map_page.dart';
 import 'top_bar.dart';
 
@@ -24,18 +26,26 @@ class FindAFlatApp extends StatelessWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
+  static final _detailPath = RegExp(r'^/flats/(\d+)$');
+
   Route<void> _route(RouteSettings settings) {
     final c = client ?? http.Client();
-    if (Uri.tryParse(settings.name ?? '')?.path == '/map') {
-      return MaterialPageRoute(
-        settings: settings,
-        builder: (_) => MapPage(client: c),
-      );
-    }
-    // Pages not built yet still show the list.
+    final detail = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
+    // Unknown paths show the list until their pages land.
+    final Widget page = switch (settings.name) {
+      '/flats/new' => AddFlatPage(client: c),
+      '/map' => MapPage(client: c),
+      _ when detail != null => FlatDetailPage(
+        id: int.parse(detail[1]!),
+        client: c,
+      ),
+      _ => HomePage(client: c),
+    };
     return MaterialPageRoute(
-      settings: settings,
-      builder: (_) => HomePage(client: c),
+      settings: settings.name == null || settings.name == '/'
+          ? const RouteSettings(name: '/home')
+          : settings,
+      builder: (_) => page,
     );
   }
 
@@ -45,9 +55,9 @@ class FindAFlatApp extends StatelessWidget {
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       navigatorObservers: navigatorObservers,
-      // The first page follows the URL path (/map), defaulting to the list.
-      onGenerateInitialRoutes: (name) => [
-        _route(RouteSettings(name: name == '/map' ? name : '/home')),
+      // Open the page for the URL directly, with no back stack under it.
+      onGenerateInitialRoutes: (initial) => [
+        _route(RouteSettings(name: initial)),
       ],
       onGenerateRoute: _route,
     );

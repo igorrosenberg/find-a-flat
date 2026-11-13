@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:latlong2/latlong.dart';
 
+import 'flat_detail.dart' show deodarStreet;
 import 'main.dart';
 import 'top_bar.dart';
-
-/// 16/1 Deodar St, Ballygunge, Kolkata 700019: the reference point.
-const deodarStreet = LatLng(22.5261, 88.3598);
 
 /// Map of every flat with coordinates, plus the Deodar Street marker.
 class MapPage extends StatefulWidget {

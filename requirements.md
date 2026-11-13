@@ -10,7 +10,7 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 the list page (showing the rows from `GET /api/flats`) and the map page exist.
+Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
 
 | Page | URL | What it does |
 | --- | --- | --- |
@@ -89,7 +89,7 @@ Distance is recomputed whenever the address, the pin or the reference point chan
 A single Cloudflare Worker serves the Flutter web app as static assets and a small JSON API, backed by one D1 database. See the README for the diagram.
 
 - **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
-- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. Only `GET /api/flats` exists so far. The Worker runs first for `/` and `/api/*`.
+- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. `GET /api/flats` and `POST /api/flats` exist so far. The Worker runs first for `/` and `/api/*`.
 - **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
 - **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. Default is OpenStreetMap Nominatim (free, 1 request per second, needs a contact User-Agent); Mapbox or Google are drop-in alternatives if accuracy is poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
