@@ -133,7 +133,10 @@ void main() {
       await pumpPhone(tester);
       expect(find.byType(DataTable), findsNothing);
       expect(rowNames(tester), ['Cheap far', 'Rejected', 'Big near']);
-      expect(find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km'), findsOneWidget);
+      expect(
+        find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km'),
+        findsOneWidget,
+      );
       for (final link in ['List', 'Map']) {
         expect(find.widgetWithText(TextButton, link), findsOneWidget);
       }
