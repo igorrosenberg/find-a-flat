@@ -20,3 +20,8 @@ binding = "DB"
 database_name = "find-a-flat"
 database_id = "local"
 migrations_dir = "migrations"
+
+# Worker logs in the Cloudflare dashboard (Workers > find-a-flat > Logs), so
+# geocoding misses and refusals can be seen.
+[observability]
+enabled = true
