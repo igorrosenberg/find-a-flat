@@ -40,6 +40,7 @@ void main() {
       'bedrooms',
       'bathrooms',
       'listing_url',
+      'notes',
     ]) {
       expect(top(key), lessThan(top('address')), reason: key);
     }
@@ -102,9 +103,32 @@ void main() {
       'bedrooms': 2,
       'bathrooms': null,
       'listing_url': null,
+      'notes': null,
     });
     // Saved: the form is gone.
     expect(find.text('Save'), findsNothing);
+  });
+
+  testWidgets('posts notes typed on the form, with no character counter', (
+    tester,
+  ) async {
+    final posts = <http.Request>[];
+    final client = MockClient((req) async {
+      if (req.method != 'POST') return http.Response('[]', 200);
+      posts.add(req);
+      return http.Response('{"id":7}', 201);
+    });
+    await openAddPage(tester, client);
+    await fill(tester, {
+      'name': 'A',
+      'notes': 'Ask about parking.\nSecond line',
+      'address': 'B',
+    });
+    expect(find.textContaining('/ 10000'), findsNothing);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final body = jsonDecode(posts.single.body) as Map<String, dynamic>;
+    expect(body['notes'], 'Ask about parking.\nSecond line');
   });
 
   testWidgets('shows server field errors next to the field', (tester) async {

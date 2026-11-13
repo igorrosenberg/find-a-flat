@@ -20,8 +20,8 @@ function env({ passphrase = 'secret' } = {}) {
           first: async () => {
             if (sql.includes('write_failure')) return null;
             inserts.push({ sql, args });
-            const [name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m] = args;
-            return { id: 7, name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m, discarded: 0 };
+            const [name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m, notes] = args;
+            return { id: 7, name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m, notes, discarded: 0 };
           },
         }),
       }),
@@ -142,4 +142,25 @@ test('distance helpers', () => {
   // Deodar St to Howrah station (22.5839, 88.3424) is roughly 6.6 km.
   const d = distanceMetres(REFERENCE_POINT, { lat: 22.5839, lng: 88.3424 });
   assert.ok(d > 6400 && d < 6800, `got ${d}`);
+});
+
+test('POST /api/flats stores notes typed on the add form', async () => {
+  const e = env();
+  const res = await post({ ...valid, notes: 'Ask about parking.\nSecond line' }, e);
+  assert.equal(res.status, 201);
+  assert.equal((await res.json()).notes, 'Ask about parking.\nSecond line');
+});
+
+test('POST /api/flats stores blank notes as null', async () => {
+  for (const notes of [undefined, null, '', '   ']) {
+    const res = await post({ ...valid, notes });
+    assert.equal(res.status, 201);
+    assert.equal((await res.json()).notes, null);
+  }
+});
+
+test('POST /api/flats rejects notes over the cap', async () => {
+  const res = await post({ ...valid, notes: 'x'.repeat(10001) });
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).fields.notes, 'At most 10000 characters');
 });

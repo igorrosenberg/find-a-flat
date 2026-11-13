@@ -31,11 +31,12 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 
 ### Add property
 
-1. Fields, in this order: Name (required), Price, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional), Address (required). Address is always the last field, on the add form, the edit form and the detail page.
+1. Fields, in this order: Name (required), Price, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional), Notes (optional), Address (required). Address is always the last field, on the add form, the edit form and the detail page.
 2. On save, the server geocodes the address to latitude and longitude and computes the distance to Deodar Street.
 3. If geocoding fails, the property is still saved, distance shows as a dash, and the detail page lets the user correct the address or drop a pin by hand.
 4. After save, the browser goes to the new property's detail page.
-5. Validation: price and size must be positive numbers, and bedrooms and bathrooms whole numbers of 0 or more; errors show next to the field.
+5. Notes is the same free-text area as on the detail page (no character counter, capped at 10,000 characters); what is typed here is what the detail page shows.
+6. Validation: price and size must be positive numbers, and bedrooms and bathrooms whole numbers of 0 or more; errors show next to the field.
 
 ### Property detail
 
@@ -83,7 +84,7 @@ One D1 table for the data, `flat` (migration `api/migrations/0001_create_flat.sq
 | listing_url | TEXT | Optional link to the original ad |
 | lat, lng | REAL | From geocoding or a manual pin; null if unknown |
 | distance_m | INTEGER | Computed and stored in metres, shown in the chosen unit |
-| notes | TEXT | Detail-page text area |
+| notes | TEXT | Text area on the add form and detail page |
 | discarded | INTEGER 0/1 | Default 0 |
 | created_at, updated_at | TEXT | ISO 8601 timestamps |
 
