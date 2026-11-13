@@ -15,7 +15,9 @@ Future<void> openAddPage(WidgetTester tester, http.Client client) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(FindAFlatApp(client: client));
   await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(TextButton, 'Add property'));
+  final add = find.widgetWithText(FilledButton, 'Add property');
+  await tester.ensureVisible(add);
+  await tester.tap(add);
   await tester.pumpAndSettle();
   expect(find.text('Save'), findsOneWidget);
 }

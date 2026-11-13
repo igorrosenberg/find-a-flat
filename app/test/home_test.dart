@@ -46,9 +46,17 @@ void main() {
     expect(find.text('₹0.95 Cr'), findsOneWidget);
     expect(find.text('1.8 km'), findsOneWidget);
     expect(find.text('–'), findsOneWidget);
-    for (final link in ['List', 'Map', 'Add property']) {
+    for (final link in ['List', 'Map']) {
       expect(find.widgetWithText(TextButton, link), findsOneWidget);
     }
+    // Add property is not in the top bar: one button, below the table.
+    expect(find.widgetWithText(TextButton, 'Add property'), findsNothing);
+    final add = find.widgetWithText(FilledButton, 'Add property');
+    expect(add, findsOneWidget);
+    expect(
+      tester.getTopLeft(add).dy,
+      greaterThan(tester.getBottomLeft(find.byType(DataTable)).dy),
+    );
     expect(_names(tester), ['Cheap far', 'Rejected', 'Big near']);
   });
 

@@ -195,29 +195,26 @@ class _HomePageState extends State<HomePage> {
             builder: (context, hide, _) => ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                Row(
                   children: [
-                    _addButton(context),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Switch(
-                          value: hide,
-                          onChanged: (v) => hideDiscarded.value = v,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Hide discarded'),
-                      ],
+                    Switch(
+                      value: hide,
+                      onChanged: (v) => hideDiscarded.value = v,
                     ),
+                    const SizedBox(width: 8),
+                    const Text('Hide discarded'),
                   ],
                 ),
                 const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: _table(context, flats, hide),
+                ),
+                const SizedBox(height: 16),
+                // The one Add property button, below the last row.
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _addButton(context),
                 ),
               ],
             ),

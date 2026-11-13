@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// The top bar shared by every page: links to List, Map and Add property.
+/// The top bar shared by every page: links to List and Map.
+/// Add property lives at the end of the list page, not here.
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   const TopBar({super.key});
 
@@ -28,10 +29,6 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
         TextButton(
           onPressed: () => _go(context, '/map'),
           child: const Text('Map'),
-        ),
-        TextButton(
-          onPressed: () => _go(context, '/flats/new'),
-          child: const Text('Add property'),
         ),
         const SizedBox(width: 8),
       ],
