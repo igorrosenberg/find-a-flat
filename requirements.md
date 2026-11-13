@@ -96,7 +96,7 @@ A single Cloudflare Worker serves the Flutter web app as static assets and a sma
 - **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
 - **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. `GET /api/flats` and `POST /api/flats` exist so far. The Worker runs first on every path, so it can check the session and serve the login or error page.
 - **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
-- **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. Default is OpenStreetMap Nominatim (free, 1 request per second, needs a contact User-Agent); Mapbox or Google are drop-in alternatives if accuracy is poor.
+- **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. OpenStreetMap Nominatim first (free, 1 request per second, needs an identifying User-Agent, which names only the app and its repository), then Photon (komoot, also OSM data, fuzzier) if Nominatim refuses or finds nothing. Messy addresses are cleaned (ward and P.S. labels, Old/New markers, landmarks and PIN codes dropped) and retried with progressively simpler queries, from street + locality down to the locality alone; a match more than 80 km from Deodar Street is ignored. Mapbox or Google are drop-in alternatives if accuracy is still poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
 - **Access:** everything behind one shared passphrase (see Passphrase), no user accounts.
 - **Deploy:** the Check workflow runs on every pull request; the Deploy workflow builds the app, applies D1 migrations and runs `wrangler deploy` on every push to `main`. Fits in the Workers and D1 free tiers.
@@ -113,7 +113,7 @@ These are filled in so building can start; each one maps to a question below.
 | Price | Purchase price in rupees, stored as whole rupees, always shown in crore with two decimals, never lakh (e.g. ₹1.05 Cr, ₹0.95 Cr) |
 | Size unit | Square feet, as asked |
 | Map provider | OpenStreetMap via flutter_map |
-| Geocoder | Nominatim, with manual pin as fallback |
+| Geocoder | Nominatim, then Photon, with manual pin as fallback |
 | Discarded rows | Shown struck through in list, not hidden |
 | Access | The whole app needs the WRITE_PASSPHRASE secret, entered once per browser on a login page; if it is unset the Worker serves only an error page |
 
