@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_router.dart';
+
 /// The top bar shared by every page: the "Flats" title, then links to List
 /// and Map.
 /// Add property lives on the list and map pages, not here.
@@ -11,7 +13,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
 
   void _go(BuildContext context, String route) {
     if (ModalRoute.of(context)?.settings.name == route) return;
-    Navigator.of(context).pushNamed(route);
+    goTo(context, route);
   }
 
   @override

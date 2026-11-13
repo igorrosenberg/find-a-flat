@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'app_router.dart';
 import 'main.dart' show formatCrore, formatKm;
 import 'passphrase.dart';
 import 'top_bar.dart';
@@ -231,7 +232,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
       if (res == null) return;
       if (res.statusCode == 204 || res.statusCode == 404) {
         if (!mounted) return;
-        Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+        resetTo(context, '/home');
         _snack('Property deleted');
       } else {
         _snack(_errorOf(res));
@@ -257,9 +258,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
             const Text('Property not found.'),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: () =>
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/home', (_) => false),
+              onPressed: () => resetTo(context, '/home'),
               child: const Text('Back to the list'),
             ),
           ],

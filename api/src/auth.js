@@ -162,7 +162,25 @@ export function loginPage({ next, status = 401, error = null }) {
 ${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ''}
 <button type="submit">Enter</button>
 </form>
-<p class="hint">This browser stays signed in for a year, or until the passphrase changes.</p>`,
+<p class="hint">This browser stays signed in for a year, or until the passphrase changes.</p>
+<script>
+// Sign in without a page load, then swap this page for the app with
+// location.replace, so this page leaves no entry in the history and Back from
+// the app does not come back to the same URL. Without JavaScript, or if the
+// request fails, the form posts as usual.
+document.addEventListener('submit', async (e) => {
+  const form = e.target;
+  if (form.dataset.posting) return;
+  e.preventDefault();
+  form.dataset.posting = '1';
+  const res = await fetch(form.action, { method: 'POST', body: new FormData(form) }).catch(() => null);
+  if (!res) return form.submit();
+  if (res.redirected) return location.replace(res.url);
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  document.querySelector('main').replaceWith(doc.querySelector('main'));
+  document.getElementById('passphrase').focus();
+});
+</script>`,
   );
 }
 
