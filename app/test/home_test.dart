@@ -97,6 +97,68 @@ void main() {
     expect(pushed.last, '/flats/1');
   });
 
+  group('on a phone', () {
+    Future<void> pumpPhone(WidgetTester tester, {List<String>? pushed}) async {
+      tester.view.physicalSize = const Size(360, 740);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        FindAFlatApp(
+          client: _api(_threeFlats),
+          navigatorObservers: [if (pushed != null) _Recorder(pushed)],
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    List<String> rowNames(WidgetTester tester) => tester
+        .widgetList<ListTile>(find.byType(ListTile))
+        .map((t) => (t.title as Text).data!)
+        .toList();
+
+    testWidgets('shows compact rows with every value, no table', (
+      tester,
+    ) async {
+      await pumpPhone(tester);
+      expect(find.byType(DataTable), findsNothing);
+      expect(rowNames(tester), ['Cheap far', 'Rejected', 'Big near']);
+      expect(
+        find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km from Deodar St'),
+        findsOneWidget,
+      );
+      for (final link in ['List', 'Map', 'Add property']) {
+        expect(find.widgetWithText(TextButton, link), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('sorts from the menu and reverses with the arrow', (
+      tester,
+    ) async {
+      await pumpPhone(tester);
+      await tester.tap(find.byKey(const Key('sort-by')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Distance').last);
+      await tester.pumpAndSettle();
+      expect(rowNames(tester), ['Big near', 'Cheap far', 'Rejected']);
+      await tester.tap(find.byKey(const Key('sort-direction')));
+      await tester.pumpAndSettle();
+      // Missing values stay last whichever the direction.
+      expect(rowNames(tester), ['Cheap far', 'Big near', 'Rejected']);
+    });
+
+    testWidgets('hides discarded and opens a flat on tap', (tester) async {
+      final pushed = <String>[];
+      await pumpPhone(tester, pushed: pushed);
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
+      expect(rowNames(tester), ['Cheap far', 'Big near']);
+      await tester.tap(find.text('Big near'));
+      await tester.pumpAndSettle();
+      expect(pushed.last, '/flats/1');
+    });
+  });
+
   test('formatters', () {
     expect(formatCrore(10500000), '₹1.05 Cr');
     expect(formatCrore(null), '–');
