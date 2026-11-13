@@ -10,7 +10,7 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List and Map. Add property is reached from the list page. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
+Four pages, each at its own URL, sharing a top bar with links to List and Map. Add property is reached from a button on the list page and on the map page. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
 
 | Page | URL | What it does |
 | --- | --- | --- |
@@ -51,6 +51,7 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 2. The map zooms to fit all pins on load.
 3. Clicking a pin opens a popup with name, price, size and a link to the detail page.
 4. Discarded properties show as grey pins, hidden when the list's hide-discarded toggle is on.
+5. An Add property button floats over the bottom-left corner of the map and opens the add form.
 
 ### Passphrase
 

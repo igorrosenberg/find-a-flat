@@ -27,6 +27,13 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const TopBar(),
+      // Bottom left, clear of the OpenStreetMap attribution on the right.
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Add property'),
+      ),
       body: FutureBuilder<List<Flat>>(
         future: _flats,
         builder: (context, snapshot) {
