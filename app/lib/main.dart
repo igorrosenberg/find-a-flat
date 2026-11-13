@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
+import 'add_flat_page.dart';
 import 'top_bar.dart';
 
 void main() {
@@ -22,12 +23,20 @@ class FindAFlatApp extends StatelessWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
-  Route<void> _homeRoute([
-    RouteSettings settings = const RouteSettings(name: '/home'),
-  ]) => MaterialPageRoute(
-    settings: settings,
-    builder: (_) => HomePage(client: client ?? http.Client()),
-  );
+  Route<void> _route(RouteSettings settings) {
+    final c = client ?? http.Client();
+    // Unknown paths show the list until their pages land.
+    final Widget page = switch (settings.name) {
+      '/flats/new' => AddFlatPage(client: c),
+      _ => HomePage(client: c),
+    };
+    return MaterialPageRoute(
+      settings: settings.name == null || settings.name == '/'
+          ? const RouteSettings(name: '/home')
+          : settings,
+      builder: (_) => page,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +44,11 @@ class FindAFlatApp extends StatelessWidget {
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       navigatorObservers: navigatorObservers,
-      // Only the list exists so far: every path shows it until the other pages land.
-      onGenerateInitialRoutes: (_) => [_homeRoute()],
-      onGenerateRoute: _homeRoute,
+      // Open the page for the URL directly, with no back stack under it.
+      onGenerateInitialRoutes: (initial) => [
+        _route(RouteSettings(name: initial)),
+      ],
+      onGenerateRoute: _route,
     );
   }
 }
