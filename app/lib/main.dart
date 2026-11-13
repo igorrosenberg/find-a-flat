@@ -5,6 +5,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
 import 'add_flat_page.dart';
+import 'flat_detail.dart';
 import 'top_bar.dart';
 
 void main() {
@@ -23,11 +24,18 @@ class FindAFlatApp extends StatelessWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
+  static final _detailPath = RegExp(r'^/flats/(\d+)$');
+
   Route<void> _route(RouteSettings settings) {
     final c = client ?? http.Client();
+    final detail = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
     // Unknown paths show the list until their pages land.
     final Widget page = switch (settings.name) {
       '/flats/new' => AddFlatPage(client: c),
+      _ when detail != null => FlatDetailPage(
+        id: int.parse(detail[1]!),
+        client: c,
+      ),
       _ => HomePage(client: c),
     };
     return MaterialPageRoute(
