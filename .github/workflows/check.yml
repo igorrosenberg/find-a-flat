@@ -1,0 +1,27 @@
+# Check every PR before it merges, with no secrets (#62).
+name: Check
+on:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+      - run: flutter analyze
+        working-directory: app
+      - run: flutter build web --release
+        working-directory: app
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: for f in src/*.js; do node --check "$f"; done
+        working-directory: api
+      - run: node --test "api/test/*.test.mjs"
+      - run: npx --yes wrangler@4 d1 migrations apply DB --local
+        working-directory: api
+      - run: npx --yes wrangler@4 deploy --dry-run
+        working-directory: api
