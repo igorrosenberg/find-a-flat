@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Opens the add page from the list's Add property button.
 Future<void> openAddPage(WidgetTester tester, http.Client client) async {
@@ -27,19 +26,7 @@ Future<void> fill(WidgetTester tester, Map<String, String> values) async {
   }
 }
 
-Future<void> enterPassphrase(WidgetTester tester, String value) async {
-  await tester.enterText(find.byKey(const Key('passphrase-field')), value);
-  await tester.tap(find.text('OK'));
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  // Start each test with no remembered passphrase.
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-    PassphraseStore.instance.reset();
-  });
-
   testWidgets('shows errors next to invalid fields without calling the API', (
     tester,
   ) async {
@@ -58,15 +45,15 @@ void main() {
     expect(posts, 0);
   });
 
-  testWidgets('posts the flat with the passphrase, keeping the form on 401', (
+  testWidgets('posts the flat, keeping the form when the session ended', (
     tester,
   ) async {
     final posts = <http.Request>[];
     final client = MockClient((req) async {
       if (req.method != 'POST') return http.Response('[]', 200);
       posts.add(req);
-      if (req.headers['X-Passphrase'] != 'right') {
-        return http.Response('{"error":"Wrong passphrase"}', 401);
+      if (posts.length == 1) {
+        return http.Response('{"error":"Passphrase needed"}', 401);
       }
       return http.Response('{"id":7}', 201);
     });
@@ -81,16 +68,12 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    await enterPassphrase(tester, 'wrong');
-    expect(find.text('Wrong passphrase'), findsOneWidget);
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-    // Cancelled after a wrong passphrase: still on the form, values kept.
+    // 401: the session cookie is gone. Still on the form, values kept.
+    expect(find.text(sessionEndedMessage), findsOneWidget);
     expect(find.text('2-bed near park'), findsOneWidget);
 
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    await enterPassphrase(tester, 'right');
 
     final body = jsonDecode(posts.last.body) as Map<String, dynamic>;
     expect(body, {
@@ -119,7 +102,6 @@ void main() {
     await fill(tester, {'name': 'A', 'address': 'B'});
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    await enterPassphrase(tester, 'x');
     expect(find.text('At most 500 characters'), findsOneWidget);
     expect(find.text('Some fields are invalid'), findsOneWidget);
   });

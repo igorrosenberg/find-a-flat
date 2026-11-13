@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'passphrase.dart';
-
-/// The top bar shared by every page: links to List, Map and Add property,
-/// plus "Forget passphrase" while a write passphrase is remembered.
+/// The top bar shared by every page: links to List, Map and Add property.
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   const TopBar({super.key});
 
@@ -36,7 +33,6 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () => _go(context, '/flats/new'),
           child: const Text('Add property'),
         ),
-        const ForgetPassphraseButton(),
         const SizedBox(width: 8),
       ],
     );

@@ -6,9 +6,9 @@ It also serves the Flutter web build from `../app/build/web`.
 - `/` redirects to `/home`.
 - `/home` is the Flutter app, which lists the rows of the `flat` table.
 - `/api/flats` returns those rows as JSON.
-- If the `WRITE_PASSPHRASE` secret is unset or empty, every path is a 503 error
-  page instead. Writes check the `X-Passphrase` header with `requireWrite` from
-  `src/auth.js`.
+- Everything needs the passphrase from the `WRITE_PASSPHRASE` secret: without
+  a session cookie, pages show a login page and `/api/*` returns 401 (`gate` in
+  `src/auth.js`). If the secret is unset or empty, every path is a 503 error page.
 
 ## Run locally
 

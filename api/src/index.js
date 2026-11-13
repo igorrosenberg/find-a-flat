@@ -1,13 +1,15 @@
 // Find a flat: one Worker serving the Flutter web app (static assets from
 // ../app/build/web) and a small JSON API, backed by D1 (binding DB).
 
-import { noPassphrasePage, passphraseIsSet, requireWrite } from './auth.js';
+import { gate, requireWrite } from './auth.js';
 import { geocode, distanceToDeodarM } from './geo.js';
 
 export default {
   async fetch(request, env) {
-    // Without the write passphrase the Worker serves nothing but an error page.
-    if (!passphraseIsSet(env)) return noPassphrasePage();
+    // Nothing is served without the passphrase: an error page while the
+    // secret is unset, otherwise a login page until a session cookie is set.
+    const blocked = await gate(request, env);
+    if (blocked) return blocked;
     const url = new URL(request.url);
     if (url.pathname === '/') {
       return Response.redirect(new URL('/home', url).toString(), 302);

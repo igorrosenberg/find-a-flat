@@ -1,8 +1,6 @@
 import 'package:find_a_flat/main.dart';
-import 'package:find_a_flat/passphrase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -30,8 +28,6 @@ List<String> _names(WidgetTester tester) => tester
 void main() {
   setUp(() {
     hideDiscarded.value = false;
-    SharedPreferences.setMockInitialValues({});
-    PassphraseStore.instance.reset();
   });
 
   testWidgets('shows the empty state with an Add property button', (

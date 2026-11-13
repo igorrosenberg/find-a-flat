@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/index.js';
+import { SESSION_COOKIE, sessionToken } from '../src/auth.js';
+
+const session = `${SESSION_COOKIE}=${await sessionToken({ WRITE_PASSPHRASE: 'open sesame' })}`;
 
 function env(rows = []) {
   return {
@@ -10,8 +13,12 @@ function env(rows = []) {
   };
 }
 
-const call = (path, rows, init, overrides = {}) =>
-  worker.fetch(new Request(`https://example.com${path}`, init), { ...env(rows), ...overrides });
+// Requests carry a valid session cookie unless init.headers says otherwise.
+const call = (path, rows, init = {}, overrides = {}) =>
+  worker.fetch(
+    new Request(`https://example.com${path}`, { ...init, headers: { cookie: session, ...init.headers } }),
+    { ...env(rows), ...overrides },
+  );
 
 test('/ redirects to /home', async () => {
   const res = await call('/');
@@ -51,3 +58,19 @@ for (const value of [undefined, '']) {
     }
   });
 }
+
+test('without a session, pages show the login page and the API is 401', async () => {
+  for (const cookie of ['', `${SESSION_COOKIE}=wrong`]) {
+    const page = await call('/home?x=1', [], { headers: { cookie } });
+    assert.equal(page.status, 401);
+    const html = await page.text();
+    assert.match(html, /<form method="post" action="\/login">/);
+    assert.match(html, /name="next" value="\/home\?x=1"/);
+    for (const path of ['/', '/main.dart.js']) {
+      assert.equal((await call(path, [], { headers: { cookie } })).status, 401, path);
+    }
+    const api = await call('/api/flats', [], { headers: { cookie } });
+    assert.equal(api.status, 401);
+    assert.deepEqual(await api.json(), { error: 'Passphrase needed' });
+  }
+});
