@@ -39,7 +39,10 @@ Future<void> _pumpMap(WidgetTester tester) async {
   );
   await tester.pumpWidget(
     MaterialApp(
-      routes: {'/flats/1': (_) => const Text('detail page 1')},
+      routes: {
+        '/flats/1': (_) => const Text('detail page 1'),
+        '/flats/new': (_) => const Text('add page'),
+      },
       home: MapPage(client: client, tileProvider: _BlankTiles()),
     ),
   );
@@ -84,5 +87,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('pin-1')), findsOneWidget);
     expect(find.byKey(const Key('pin-2')), findsNothing);
+  });
+
+  testWidgets('Add property button opens the add page', (tester) async {
+    await _pumpMap(tester);
+    await tester.tap(find.widgetWithText(FloatingActionButton, 'Add property'));
+    await tester.pumpAndSettle();
+    expect(find.text('add page'), findsOneWidget);
   });
 }

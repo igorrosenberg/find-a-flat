@@ -10,7 +10,7 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
+Four pages, each at its own URL, sharing a top bar with links to List and Map. Add property is reached from a button on the list page and on the map page. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
 
 | Page | URL | What it does |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ Four pages, each at its own URL, sharing a top bar with links to List, Map and A
 3. Discarded properties stay in the table but are shown struck through and greyed out.
 4. Clicking a column header sorts by that column; default sort is newest first.
 5. A toggle hides discarded properties; it is off by default.
-6. An Add property button sits above the table and opens the add form.
+6. A single Add property button sits at the end of the list, below the last row, and opens the add form. It is not in the top bar.
 7. Empty state: a short message and the Add property button.
 
 ### Add property
@@ -51,6 +51,7 @@ Four pages, each at its own URL, sharing a top bar with links to List, Map and A
 2. The map zooms to fit all pins on load.
 3. Clicking a pin opens a popup with name, price, size and a link to the detail page.
 4. Discarded properties show as grey pins, hidden when the list's hide-discarded toggle is on.
+5. An Add property button floats over the bottom-left corner of the map and opens the add form.
 
 ### Passphrase
 

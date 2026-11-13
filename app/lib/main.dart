@@ -225,8 +225,6 @@ class _HomePageState extends State<HomePage> {
                         runSpacing: 8,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          // On a phone the top bar already has Add property.
-                          if (!narrow) _addButton(context),
                           _hideSwitch(hide),
                           if (narrow) _sortMenu(),
                         ],
@@ -239,6 +237,12 @@ class _HomePageState extends State<HomePage> {
                           scrollDirection: Axis.horizontal,
                           child: _table(context, shown),
                         ),
+                      const SizedBox(height: 16),
+                      // The one Add property button, below the last row.
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _addButton(context),
+                      ),
                     ],
                   );
                 },

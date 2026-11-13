@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// The top bar shared by every page: links to List, Map and Add property.
+/// The top bar shared by every page: links to List and Map.
+/// Add property lives on the list and map pages, not here.
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   const TopBar({super.key});
 
@@ -15,7 +16,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     // On a phone the title is dropped and the links get icons and tighter
-    // padding, so all three fit with room to spare.
+    // padding, so both fit with room to spare.
     final narrow = MediaQuery.sizeOf(context).width < 520;
     Widget link(String label, IconData icon, String route) {
       void go() => _go(context, route);
@@ -36,7 +37,6 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
     final links = [
       link('List', Icons.list, '/home'),
       link('Map', Icons.map_outlined, '/map'),
-      link('Add property', Icons.add, '/flats/new'),
     ];
     if (narrow) {
       // Scaled down rather than cut off if a large font makes them too wide.
