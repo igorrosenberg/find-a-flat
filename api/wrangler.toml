@@ -1,0 +1,12 @@
+name = "find-a-flat"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# The real database_id is filled in by the Deploy workflow, which finds
+# (or creates) the D1 database named below in the Cloudflare account.
+# "local" is enough for `wrangler dev` and the Check workflow.
+[[d1_databases]]
+binding = "DB"
+database_name = "find-a-flat"
+database_id = "local"
+migrations_dir = "migrations"

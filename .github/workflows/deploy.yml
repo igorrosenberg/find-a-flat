@@ -1,0 +1,42 @@
+# Deploy the Worker and apply D1 migrations on every push to main.
+# Needs two repository secrets: CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID.
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test "test/*.test.mjs"
+      - name: Find or create the D1 database
+        run: |
+          name=find-a-flat
+          lookup() { npx --yes wrangler@4 d1 list --json | node -e "
+            const dbs = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+            const db = dbs.find((d) => d.name === process.argv[1]);
+            if (db) console.log(db.uuid);" "$name"; }
+          id=$(lookup)
+          if [ -z "$id" ]; then
+            npx --yes wrangler@4 d1 create "$name"
+            id=$(lookup)
+          fi
+          test -n "$id"
+          sed -i "s/^database_id = .*/database_id = \"$id\"/" wrangler.toml
+          echo "D1 database $name: $id"
+      - run: npx --yes wrangler@4 d1 migrations apply DB --remote
+      - run: npx --yes wrangler@4 deploy
