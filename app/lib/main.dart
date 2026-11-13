@@ -259,7 +259,7 @@ class _HomePageState extends State<HomePage> {
     children: [
       Switch(value: hide, onChanged: (v) => hideDiscarded.value = v),
       const SizedBox(width: 8),
-      const Text('Hide discarded'),
+      Text(hide ? 'Show discarded' : 'Hide discarded'),
     ],
   );
 

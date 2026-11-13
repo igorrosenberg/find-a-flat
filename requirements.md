@@ -25,7 +25,7 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 2. Clicking anywhere on a row opens that property's detail page.
 3. Discarded properties stay in the table but are shown struck through and greyed out.
 4. Clicking a column header sorts by that column; default sort is newest first.
-5. A toggle hides discarded properties; it is off by default.
+5. A toggle hides discarded properties; it is off by default. Its label names what it will do: "Hide discarded" while they are shown, "Show discarded" while they are hidden.
 6. A single Add property button sits at the end of the list, below the last row, and opens the add form. It is not in the top bar.
 7. Empty state: a short message and the Add property button.
 

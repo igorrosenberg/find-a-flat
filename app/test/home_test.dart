@@ -67,10 +67,13 @@ void main() {
     await tester.pumpAndSettle();
     final style = tester.widget<Text>(find.text('Rejected')).style!;
     expect(style.decoration, TextDecoration.lineThrough);
+    expect(find.text('Hide discarded'), findsOneWidget);
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
     expect(find.text('Rejected'), findsNothing);
     expect(hideDiscarded.value, isTrue);
+    expect(find.text('Show discarded'), findsOneWidget);
+    expect(find.text('Hide discarded'), findsNothing);
   });
 
   testWidgets('clicking a header sorts, clicking again reverses', (
