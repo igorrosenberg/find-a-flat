@@ -1,4 +1,4 @@
-# Check every PR before it merges, with no secrets (#62).
+# Check every PR before it merges, with no secrets.
 name: Check
 on:
   pull_request:

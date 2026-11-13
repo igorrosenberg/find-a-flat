@@ -1,6 +1,6 @@
 # Flat finder webapp: requirements
 
-Started 2026-11-04 by Igor Rosenberg. Exported on 2026-11-07 from the [requirements doc](https://claude.ai/artifact/RGy29zze8BmE81KnqBWika).
+Started 2026-11-04 by Igor Rosenberg. Exported on 2026-11-07 from the [requirements doc](https://claude.ai/artifact/RGy29zze8BmE81KnqBWika), updated on 2026-11-13 to match what is built.
 
 ## Overview
 
@@ -10,13 +10,13 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property.
+Four pages, each at its own URL, sharing a top bar with links to List, Map and Add property. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 only the list page exists, showing the rows from `GET /api/flats`.
 
 | Page | URL | What it does |
 | --- | --- | --- |
-| Property list (home) | / | Table of all properties, Add property button |
-| Add property | /properties/new | Form to create a property |
-| Property detail | /properties/:id | All fields, notes, discarded flag, edit and delete |
+| Property list (home) | /home | Table of all properties, Add property button |
+| Add property | /flats/new | Form to create a property |
+| Property detail | /flats/:id | All fields, notes, discarded flag, edit and delete |
 | Map | /map | All properties as pins on one map |
 
 ### Property list (home)
@@ -64,7 +64,7 @@ Four pages, each at its own URL, sharing a top bar with links to List, Map and A
 
 ## Data model
 
-One D1 table, `properties`. The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
+One D1 table, `flat` (migration `api/migrations/0001_create_flat.sql`). The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -86,15 +86,15 @@ Distance is recomputed whenever the address, the pin or the reference point chan
 
 ## Architecture and non-functional requirements
 
-A single Cloudflare Worker serves server-rendered HTML pages and a small JSON API, backed by one D1 database.
+A single Cloudflare Worker serves the Flutter web app as static assets and a small JSON API, backed by one D1 database. See the README for the diagram.
 
-- **Rendering:** server-rendered HTML with a little vanilla JS (sorting, map). No frontend build step needed; Hono is an option for routing.
-- **API:** `GET/POST /api/properties`, `GET/PATCH/DELETE /api/properties/:id`. Pages and the map read from it.
-- **Map:** Leaflet with OpenStreetMap tiles, loaded from a CDN. Free, no API key.
+- **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
+- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. Only `GET /api/flats` exists so far. The Worker runs first for `/` and `/api/*`.
+- **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
 - **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. Default is OpenStreetMap Nominatim (free, 1 request per second, needs a contact User-Agent); Mapbox or Google are drop-in alternatives if accuracy is poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
 - **Access:** public reads, passphrase-protected writes (see Write passphrase), no user accounts.
-- **Deploy:** Wrangler, with D1 migrations checked into the repo. Fits in the Workers and D1 free tiers.
+- **Deploy:** the Check workflow runs on every pull request; the Deploy workflow builds the app, applies D1 migrations and runs `wrangler deploy` on every push to `main`. Fits in the Workers and D1 free tiers.
 - **Devices:** usable on a phone; the table scrolls horizontally on narrow screens.
 
 ## Defaults assumed
@@ -107,7 +107,7 @@ These are filled in so building can start; each one maps to a question below.
 | Distance unit | Kilometres, one decimal (stored in metres) |
 | Price | Purchase price in rupees, stored as whole rupees, always shown in crore with two decimals, never lakh (e.g. ₹1.05 Cr, ₹0.95 Cr) |
 | Size unit | Square feet, as asked |
-| Map provider | Leaflet + OpenStreetMap |
+| Map provider | OpenStreetMap via flutter_map |
 | Geocoder | Nominatim, with manual pin as fallback |
 | Discarded rows | Shown struck through in list, not hidden |
 | Write access | Reads public; writes need the WRITE_PASSPHRASE secret, blocked if it is unset |
@@ -123,4 +123,4 @@ The reference point is confirmed. None of the rest blocks a first version, and e
 - [ ] Should discarded properties be shown struck through, hidden by default, or sorted to the bottom?
 - [x] Write access confirmed: a shared passphrase stored as a Cloudflare secret, reads stay public.
 - [x] Extra fields confirmed: optional bedrooms and bathrooms. Any status beyond discarded worth adding later (e.g. viewing booked)?
-- [ ] Code goes in github.com/igorrosenberg/find-a-flat. Do you have a Cloudflare account to deploy to?
+- [x] Code is in github.com/igorrosenberg/find-a-flat and deploys to Cloudflare from GitHub Actions.

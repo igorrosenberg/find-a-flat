@@ -1,4 +1,4 @@
-# Build the Flutter app and deploy it with the API as one Worker, on every push to main (#28).
+# Build the Flutter app and deploy it with the API as one Worker, on every push to main.
 name: Deploy
 on:
   push:
@@ -40,13 +40,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      # Fail the run when a Worker secret is missing, so a broken deploy shows red here (#39).
+      # Fail the run when a Worker secret is missing, so a broken deploy shows red here.
       - run: |
           npx --yes wrangler@4 secret list | node -e '
             const out = require("fs").readFileSync(0, "utf8");
             const have = JSON.parse(out.slice(out.indexOf("["))).map((s) => s.name);
             const missing = ["WRITE_PASSPHRASE"].filter((n) => !have.includes(n));
-            if (missing.length) { console.error("Missing Worker secret(s): " + missing.join(", ") + ". Add them as type Secret on Cloudflare (#39)."); process.exit(1); }
+            if (missing.length) { console.error("Missing Worker secret(s): " + missing.join(", ") + ". Add them as type Secret on Cloudflare."); process.exit(1); }
             console.log("All Worker secrets present.");
           '
         working-directory: api
