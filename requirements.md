@@ -1,6 +1,6 @@
 # Flat finder webapp: requirements
 
-Started 2026-11-04 by Igor Rosenberg. Exported on 2026-11-07 from the [requirements doc](https://claude.ai/artifact/RGy29zze8BmE81KnqBWika), updated on 2026-11-13 to match what is built.
+Started 2026-11-04 by Igor Rosenberg, updated on 2026-11-13 to match what is built. This file is the only copy of the requirements.
 
 ## Overview
 
