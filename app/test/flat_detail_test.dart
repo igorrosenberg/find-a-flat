@@ -116,6 +116,22 @@ void main() {
     expect(find.text('Notes saved'), findsOneWidget);
   });
 
+  testWidgets('notes hide the counter but keep the 10,000 limit', (
+    tester,
+  ) async {
+    await open(tester, MockClient((_) async => ok(flatJson())));
+    expect(find.textContaining('/$notesMax'), findsNothing);
+    expect(find.textContaining('10000'), findsNothing);
+    await tester.enterText(
+      find.byKey(const Key('notes')),
+      'x' * (notesMax + 5),
+    );
+    await tester.pump();
+    final field = tester.widget<TextField>(find.byKey(const Key('notes')));
+    expect(field.controller!.text.length, notesMax);
+    expect(find.textContaining('/$notesMax'), findsNothing);
+  });
+
   testWidgets('ticking discarded strikes the name through', (tester) async {
     await open(
       tester,
