@@ -29,6 +29,22 @@ Future<void> fill(WidgetTester tester, Map<String, String> values) async {
 }
 
 void main() {
+  testWidgets('address is the last field', (tester) async {
+    final client = MockClient((_) async => http.Response('[]', 200));
+    await openAddPage(tester, client);
+    double top(String key) => tester.getTopLeft(find.byKey(ValueKey(key))).dy;
+    for (final key in [
+      'name',
+      'price',
+      'size_sqft',
+      'bedrooms',
+      'bathrooms',
+      'listing_url',
+    ]) {
+      expect(top(key), lessThan(top('address')), reason: key);
+    }
+  });
+
   testWidgets('shows errors next to invalid fields without calling the API', (
     tester,
   ) async {

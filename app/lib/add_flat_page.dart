@@ -23,12 +23,12 @@ class _AddFlatPageState extends State<AddFlatPage> {
   final _fields = {
     for (final f in [
       'name',
-      'address',
       'price',
       'size_sqft',
       'bedrooms',
       'bathrooms',
       'listing_url',
+      'address',
     ])
       f: TextEditingController(),
   };
@@ -159,7 +159,6 @@ class _AddFlatPageState extends State<AddFlatPage> {
                     validator: requiredText,
                     hint: 'e.g. 2-bed near park',
                   ),
-                  _field('address', 'Address', validator: requiredText),
                   _field(
                     'price',
                     'Price (₹ crore)',
@@ -191,6 +190,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
                     validator: httpUrl,
                     keyboard: TextInputType.url,
                   ),
+                  _field('address', 'Address', validator: requiredText),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
