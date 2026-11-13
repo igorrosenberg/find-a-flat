@@ -45,7 +45,8 @@ jobs:
           npx --yes wrangler@4 secret list | node -e '
             const out = require("fs").readFileSync(0, "utf8");
             const have = JSON.parse(out.slice(out.indexOf("["))).map((s) => s.name);
-            const missing = ["WRITE_PASSPHRASE"].filter((n) => !have.includes(n));
+            const required = []; // Add "WRITE_PASSPHRASE" here once the app has write endpoints.
+            const missing = required.filter((n) => !have.includes(n));
             if (missing.length) { console.error("Missing Worker secret(s): " + missing.join(", ") + ". Add them as type Secret on Cloudflare (#39)."); process.exit(1); }
             console.log("All Worker secrets present.");
           '

@@ -19,7 +19,7 @@ Then open http://localhost:8787/. Tests: `node --test "test/*.test.mjs"`.
 
 The Deploy workflow runs on every push to `main`. It builds the Flutter app,
 finds or creates the D1 database `find-a-flat`, applies the migrations, deploys
-the Worker, then fails if the `WRITE_PASSPHRASE` Worker secret is missing.
+the Worker, then checks that required Worker secrets exist (none yet).
 Add two repository secrets first (Settings, Secrets and variables, Actions):
 
 - `CLOUDFLARE_API_TOKEN`: a token from the "Edit Cloudflare Workers" template,

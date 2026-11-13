@@ -44,4 +44,4 @@ flowchart LR
 ```
 
 Deploy needs two GitHub secrets, `CLOUDFLARE_API_TOKEN` and
-`CLOUDFLARE_ACCOUNT_ID`, and the Worker secret `WRITE_PASSPHRASE` on Cloudflare.
+`CLOUDFLARE_ACCOUNT_ID`. The Worker secret `WRITE_PASSPHRASE` will be needed once the app can add or edit flats.
