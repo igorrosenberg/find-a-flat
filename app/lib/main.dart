@@ -52,7 +52,7 @@ class FindAFlatApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Find a flat',
+      title: 'Flats',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       navigatorObservers: navigatorObservers,
       // Open the page for the URL directly, with no back stack under it.

@@ -1,11 +1,11 @@
 {
-    "name": "Find a flat",
-    "short_name": "Find a flat",
+    "name": "Flats",
+    "short_name": "Flats",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Flats: candidate flats to buy, on a list and a map.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

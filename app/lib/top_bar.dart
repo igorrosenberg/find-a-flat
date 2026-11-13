@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// The top bar shared by every page: links to List and Map.
+/// The top bar shared by every page: the "Flats" title, then links to List
+/// and Map.
 /// Add property lives on the list and map pages, not here.
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
   const TopBar({super.key});
@@ -15,8 +16,8 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    // On a phone the title is dropped and the links get icons and tighter
-    // padding, so both fit with room to spare.
+    // On a phone the links get icons and tighter padding, so the title and
+    // both links fit on one line.
     final narrow = MediaQuery.sizeOf(context).width < 520;
     Widget link(String label, IconData icon, String route) {
       void go() => _go(context, route);
@@ -42,19 +43,24 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       // Scaled down rather than cut off if a large font makes them too wide.
       return AppBar(
         automaticallyImplyLeading: false,
-        titleSpacing: 8,
-        title: Align(
-          alignment: Alignment.centerRight,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(mainAxisSize: MainAxisSize.min, children: links),
+        titleSpacing: 16,
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Flats'),
+              const SizedBox(width: 16),
+              ...links,
+            ],
           ),
         ),
       );
     }
     return AppBar(
       automaticallyImplyLeading: false,
-      title: const Text('Find a flat'),
+      title: const Text('Flats'),
       actions: [...links, const SizedBox(width: 8)],
     );
   }
