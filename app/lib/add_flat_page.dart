@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'app_router.dart';
 import 'passphrase.dart';
 import 'top_bar.dart';
 
@@ -82,7 +83,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
       if (!mounted || res == null) return; // Cancelled: keep the form.
       final json = _decode(res.body);
       if (res.statusCode == 201) {
-        Navigator.of(context).pushReplacementNamed('/flats/${json['id']}');
+        replaceWith(context, '/flats/${json['id']}');
         return;
       }
       setState(() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 
+import 'app_router.dart';
 import 'flat_detail.dart' show deodarStreet;
 import 'main.dart';
 import 'top_bar.dart';
@@ -30,7 +31,7 @@ class _MapPageState extends State<MapPage> {
       // Bottom left, clear of the OpenStreetMap attribution on the right.
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
+        onPressed: () => goTo(context, '/flats/new'),
         icon: const Icon(Icons.add),
         label: const Text('Add property'),
       ),
@@ -164,8 +165,7 @@ class _Popup extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed('/flats/${flat.id}'),
+                onPressed: () => goTo(context, '/flats/${flat.id}'),
                 child: const Text('Open details'),
               ),
             ),

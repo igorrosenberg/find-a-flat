@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import 'add_flat_page.dart';
+import 'app_router.dart';
 import 'flat_detail.dart';
 import 'map_page.dart';
 import 'top_bar.dart';
@@ -15,7 +16,7 @@ void main() {
   runApp(const FindAFlatApp());
 }
 
-class FindAFlatApp extends StatelessWidget {
+class FindAFlatApp extends StatefulWidget {
   const FindAFlatApp({
     super.key,
     this.client,
@@ -28,11 +29,11 @@ class FindAFlatApp extends StatelessWidget {
 
   static final _detailPath = RegExp(r'^/flats/(\d+)$');
 
-  Route<void> _route(RouteSettings settings) {
+  Widget _page(String path) {
     final c = client ?? http.Client();
-    final detail = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
+    final detail = _detailPath.firstMatch(path);
     // Unknown paths show the list until their pages land.
-    final Widget page = switch (settings.name) {
+    return switch (path) {
       '/flats/new' => AddFlatPage(client: c),
       '/map' => MapPage(client: c),
       _ when detail != null => FlatDetailPage(
@@ -41,25 +42,31 @@ class FindAFlatApp extends StatelessWidget {
       ),
       _ => HomePage(client: c),
     };
-    return MaterialPageRoute(
-      settings: settings.name == null || settings.name == '/'
-          ? const RouteSettings(name: '/home')
-          : settings,
-      builder: (_) => page,
-    );
+  }
+
+  @override
+  State<FindAFlatApp> createState() => _FindAFlatAppState();
+}
+
+class _FindAFlatAppState extends State<FindAFlatApp> {
+  late final _delegate = AppRouterDelegate(
+    buildPage: widget._page,
+    navigatorObservers: widget.navigatorObservers,
+  );
+
+  @override
+  void dispose() {
+    _delegate.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
-      navigatorObservers: navigatorObservers,
-      // Open the page for the URL directly, with no back stack under it.
-      onGenerateInitialRoutes: (initial) => [
-        _route(RouteSettings(name: initial)),
-      ],
-      onGenerateRoute: _route,
+      routeInformationParser: const AppRouteParser(),
+      routerDelegate: _delegate,
     );
   }
 }
@@ -170,7 +177,7 @@ class _HomePageState extends State<HomePage> {
   });
 
   Widget _addButton(BuildContext context) => FilledButton.icon(
-    onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
+    onPressed: () => goTo(context, '/flats/new'),
     icon: const Icon(Icons.add),
     label: const Text('Add property'),
   );
@@ -224,10 +231,7 @@ class _HomePageState extends State<HomePage> {
                         spacing: 16,
                         runSpacing: 8,
                         crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          _hideSwitch(hide),
-                          if (narrow) _sortMenu(),
-                        ],
+                        children: [_hideSwitch(hide), if (narrow) _sortMenu()],
                       ),
                       const SizedBox(height: 8),
                       if (narrow)
@@ -313,7 +317,7 @@ class _HomePageState extends State<HomePage> {
             style: _style(f.discarded) ?? theme.textTheme.bodyMedium,
           ),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).pushNamed('/flats/${f.id}'),
+          onTap: () => goTo(context, '/flats/${f.id}'),
         ),
         const Divider(height: 1),
       ],
@@ -342,8 +346,7 @@ class _HomePageState extends State<HomePage> {
       rows: [
         for (final f in shown)
           DataRow(
-            onSelectChanged: (_) =>
-                Navigator.of(context).pushNamed('/flats/${f.id}'),
+            onSelectChanged: (_) => goTo(context, '/flats/${f.id}'),
             cells: [
               _cell(f.name, f.discarded),
               _cell(formatCrore(f.price), f.discarded),

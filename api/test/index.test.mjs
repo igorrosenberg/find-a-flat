@@ -65,6 +65,8 @@ test('without a session, pages show the login page and the API is 401', async ()
     assert.equal(page.status, 401);
     const html = await page.text();
     assert.match(html, /<form method="post" action="\/login">/);
+    // Signing in replaces the login page, so Back skips it.
+    assert.match(html, /location\.replace\(res\.url\)/);
     assert.match(html, /name="next" value="\/home\?x=1"/);
     for (const path of ['/', '/main.dart.js']) {
       assert.equal((await call(path, [], { headers: { cookie } })).status, 401, path);

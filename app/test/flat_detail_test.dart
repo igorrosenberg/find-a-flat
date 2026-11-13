@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:find_a_flat/app_router.dart';
 import 'package:find_a_flat/flat_detail.dart';
 import 'package:find_a_flat/main.dart';
 import 'package:flutter/material.dart';
@@ -156,8 +157,7 @@ void main() {
     );
     await tester.pumpWidget(FindAFlatApp(client: client));
     await tester.pumpAndSettle();
-    final nav = tester.state<NavigatorState>(find.byType(Navigator));
-    nav.pushNamed('/flats/3');
+    goTo(tester.element(find.byType(HomePage)), '/flats/3');
     await tester.pumpAndSettle();
     expect(find.text('Park flat'), findsOneWidget);
   });
