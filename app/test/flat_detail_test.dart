@@ -43,18 +43,6 @@ Future<void> open(WidgetTester tester, http.Client client) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> enterPassphrase(WidgetTester tester) async {
-  await tester.enterText(
-    find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.byType(TextField),
-    ),
-    'pw',
-  );
-  await tester.tap(find.text('OK'));
-  await tester.pumpAndSettle();
-}
-
 void main() {
   testWidgets('shows every field and the distance', (tester) async {
     await open(tester, MockClient((_) async => ok(flatJson())));
@@ -80,7 +68,7 @@ void main() {
     expect(find.text('Drop pin by hand'), findsOneWidget);
   });
 
-  testWidgets('saving notes sends a PATCH with the passphrase', (tester) async {
+  testWidgets('saving notes sends a PATCH', (tester) async {
     late http.Request patch;
     await open(
       tester,
@@ -96,8 +84,6 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('save-notes')));
     await tester.pumpAndSettle();
-    await enterPassphrase(tester);
-    expect(patch.headers['X-Passphrase'], 'pw');
     expect(jsonDecode(patch.body), {'notes': 'New note'});
     expect(find.text('Notes saved'), findsOneWidget);
   });
@@ -113,16 +99,6 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('discarded')));
     await tester.pumpAndSettle();
-    // The passphrase is remembered from the previous test in this process.
-    if (find
-        .descendant(
-          of: find.byType(AlertDialog),
-          matching: find.byType(TextField),
-        )
-        .evaluate()
-        .isNotEmpty) {
-      await enterPassphrase(tester);
-    }
     final name = tester.widget<Text>(find.byKey(const Key('flat-name')));
     expect(name.style?.decoration, TextDecoration.lineThrough);
   });

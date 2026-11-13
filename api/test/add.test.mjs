@@ -1,6 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/index.js';
+import { SESSION_COOKIE, sessionToken } from '../src/auth.js';
 import { config, distanceMetres, distanceToDeodarM, REFERENCE_POINT } from '../src/geo.js';
 
 config.geocodeIntervalMs = 0;
@@ -14,7 +15,10 @@ function env({ passphrase = 'secret' } = {}) {
     DB: {
       prepare: (sql) => ({
         bind: (...args) => ({
+          // Rate-limit bookkeeping from auth.js: no recorded failures.
+          run: async () => assert.match(sql, /write_failure/),
           first: async () => {
+            if (sql.includes('write_failure')) return null;
             inserts.push({ sql, args });
             const [name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m] = args;
             return { id: 7, name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m, discarded: 0 };
@@ -40,7 +44,10 @@ afterEach(() => {
   globalThis.fetch = realFetch;
 });
 
-const post = (body, e = env(), headers = { 'x-passphrase': 'secret' }) =>
+// The session cookie the login page sets for the passphrase 'secret'.
+const session = { cookie: `${SESSION_COOKIE}=${await sessionToken({ WRITE_PASSPHRASE: 'secret' })}` };
+
+const post = (body, e = env(), headers = session) =>
   worker.fetch(
     new Request('https://example.com/api/flats', {
       method: 'POST',
@@ -120,12 +127,12 @@ test('invalid fields are reported per field and nothing is saved', async () => {
   assert.equal((await post('not json', e)).status, 400);
 });
 
-test('writes need the passphrase', async () => {
+test('writes need a session', async () => {
   const e = env();
   assert.equal((await post(valid, e, {})).status, 401);
-  const wrong = await post(valid, e, { 'x-passphrase': 'nope' });
+  const wrong = await post(valid, e, { cookie: `${SESSION_COOKIE}=nope` });
   assert.equal(wrong.status, 401);
-  assert.deepEqual(await wrong.json(), { error: 'Wrong passphrase' });
+  assert.deepEqual(await wrong.json(), { error: 'Passphrase needed' });
   assert.equal((await post(valid, env({ passphrase: '' }))).status, 503);
   assert.equal(e.inserts.length, 0);
 });

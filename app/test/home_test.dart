@@ -26,7 +26,9 @@ List<String> _names(WidgetTester tester) => tester
     .toList();
 
 void main() {
-  setUp(() => hideDiscarded.value = false);
+  setUp(() {
+    hideDiscarded.value = false;
+  });
 
   testWidgets('shows the empty state with an Add property button', (
     tester,

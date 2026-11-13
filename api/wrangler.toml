@@ -2,13 +2,15 @@ name = "find-a-flat"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 
-# The Flutter web build. `/` and `/api/*` run the Worker first; any other
-# path is a static file, or index.html so Flutter can route /home itself.
+# The Flutter web build. The Worker runs first on every path, so it can serve
+# only an error page while WRITE_PASSPHRASE is unset; otherwise `/` redirects,
+# `/api/*` is the API, and any other path is a static file, or index.html so
+# Flutter can route /home itself.
 [assets]
 directory = "../app/build/web"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = ["/", "/api/*"]
+run_worker_first = true
 
 # The Deploy workflow fills in the real database_id: it finds (or creates)
 # the D1 database named below in the Cloudflare account.
