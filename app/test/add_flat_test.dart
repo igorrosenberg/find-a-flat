@@ -14,7 +14,7 @@ Future<void> openAddPage(WidgetTester tester, http.Client client) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(FindAFlatApp(client: client));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Add property'));
+  await tester.tap(find.widgetWithText(TextButton, 'Add property'));
   await tester.pumpAndSettle();
   expect(find.text('Save'), findsOneWidget);
   // Start each test with no remembered passphrase.
@@ -29,14 +29,18 @@ Future<void> fill(WidgetTester tester, Map<String, String> values) async {
 }
 
 Future<void> enterPassphrase(WidgetTester tester, String value) async {
-  await tester.enterText(find.widgetWithText(TextField, 'Write passphrase'), value);
+  await tester.enterText(
+    find.widgetWithText(TextField, 'Write passphrase'),
+    value,
+  );
   await tester.tap(find.text('OK'));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('shows errors next to invalid fields without calling the API',
-      (tester) async {
+  testWidgets('shows errors next to invalid fields without calling the API', (
+    tester,
+  ) async {
     var posts = 0;
     final client = MockClient((req) async {
       if (req.method == 'POST') posts++;
@@ -52,8 +56,9 @@ void main() {
     expect(posts, 0);
   });
 
-  testWidgets('posts the flat with the passphrase, keeping the form on 401',
-      (tester) async {
+  testWidgets('posts the flat with the passphrase, keeping the form on 401', (
+    tester,
+  ) async {
     final posts = <http.Request>[];
     final client = MockClient((req) async {
       if (req.method != 'POST') return http.Response('[]', 200);
@@ -100,11 +105,14 @@ void main() {
   });
 
   testWidgets('shows server field errors next to the field', (tester) async {
-    final client = MockClient((req) async => req.method == 'POST'
-        ? http.Response(
-            '{"error":"Some fields are invalid","fields":{"address":"At most 500 characters"}}',
-            400)
-        : http.Response('[]', 200));
+    final client = MockClient(
+      (req) async => req.method == 'POST'
+          ? http.Response(
+              '{"error":"Some fields are invalid","fields":{"address":"At most 500 characters"}}',
+              400,
+            )
+          : http.Response('[]', 200),
+    );
     await openAddPage(tester, client);
     await fill(tester, {'name': 'A', 'address': 'B'});
     await tester.tap(find.text('Save'));

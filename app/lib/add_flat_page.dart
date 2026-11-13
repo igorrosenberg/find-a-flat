@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'passphrase.dart';
+import 'top_bar.dart';
 
 /// /flats/new: form to create a flat. The Worker geocodes the address and
 /// computes the distance; on success the browser goes to the detail page.
@@ -140,16 +141,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
   Widget build(BuildContext context) {
     const numberKeyboard = TextInputType.numberWithOptions(decimal: true);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add property'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pushNamed('/home'),
-            child: const Text('List'),
-          ),
-          const ForgetPassphraseButton(),
-        ],
-      ),
+      appBar: const TopBar(onForgetPassphrase: forgetPassphrase),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(
@@ -160,28 +152,52 @@ class _AddFlatPageState extends State<AddFlatPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _field('name', 'Name', validator: requiredText,
-                      hint: 'e.g. 2-bed near park'),
+                  _field(
+                    'name',
+                    'Name',
+                    validator: requiredText,
+                    hint: 'e.g. 2-bed near park',
+                  ),
                   _field('address', 'Address', validator: requiredText),
-                  _field('price', 'Price (₹ crore)',
-                      validator: positiveNumber,
-                      keyboard: numberKeyboard,
-                      hint: 'e.g. 1.05'),
-                  _field('size_sqft', 'Size (sq ft)',
-                      validator: positiveNumber, keyboard: numberKeyboard),
-                  _field('bedrooms', 'Bedrooms (optional)',
-                      validator: wholeNumber, keyboard: TextInputType.number),
-                  _field('bathrooms', 'Bathrooms (optional)',
-                      validator: wholeNumber, keyboard: TextInputType.number),
-                  _field('listing_url', 'Listing URL (optional)',
-                      validator: httpUrl, keyboard: TextInputType.url),
+                  _field(
+                    'price',
+                    'Price (₹ crore)',
+                    validator: positiveNumber,
+                    keyboard: numberKeyboard,
+                    hint: 'e.g. 1.05',
+                  ),
+                  _field(
+                    'size_sqft',
+                    'Size (sq ft)',
+                    validator: positiveNumber,
+                    keyboard: numberKeyboard,
+                  ),
+                  _field(
+                    'bedrooms',
+                    'Bedrooms (optional)',
+                    validator: wholeNumber,
+                    keyboard: TextInputType.number,
+                  ),
+                  _field(
+                    'bathrooms',
+                    'Bathrooms (optional)',
+                    validator: wholeNumber,
+                    keyboard: TextInputType.number,
+                  ),
+                  _field(
+                    'listing_url',
+                    'Listing URL (optional)',
+                    validator: httpUrl,
+                    keyboard: TextInputType.url,
+                  ),
                   if (_error != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
                         _error!,
                         style: TextStyle(
-                            color: Theme.of(context).colorScheme.error),
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ),
                   Align(
@@ -207,7 +223,9 @@ String? requiredText(String v) => v.isEmpty ? 'Required' : null;
 String? positiveNumber(String v) {
   if (v.isEmpty) return null;
   final n = num.tryParse(v);
-  return n == null || !n.isFinite || n <= 0 ? 'Must be a positive number' : null;
+  return n == null || !n.isFinite || n <= 0
+      ? 'Must be a positive number'
+      : null;
 }
 
 String? wholeNumber(String v) {

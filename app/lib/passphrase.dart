@@ -61,13 +61,16 @@ Future<String?> _ask(BuildContext context, String? error) {
   );
 }
 
+/// Drops the remembered passphrase; the top bar's "Forget passphrase".
+void forgetPassphrase() => _passphrase = null;
+
 /// Top bar action that drops the remembered passphrase.
 class ForgetPassphraseButton extends StatelessWidget {
   const ForgetPassphraseButton({super.key});
 
   @override
   Widget build(BuildContext context) => TextButton(
-        onPressed: () => _passphrase = null,
-        child: const Text('Forget passphrase'),
-      );
+    onPressed: forgetPassphrase,
+    child: const Text('Forget passphrase'),
+  );
 }
