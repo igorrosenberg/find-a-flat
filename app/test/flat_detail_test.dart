@@ -44,7 +44,13 @@ Future<void> open(WidgetTester tester, http.Client client) async {
 }
 
 Future<void> enterPassphrase(WidgetTester tester) async {
-  await tester.enterText(find.byKey(const Key('passphrase-field')), 'pw');
+  await tester.enterText(
+    find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    ),
+    'pw',
+  );
   await tester.tap(find.text('OK'));
   await tester.pumpAndSettle();
 }
@@ -108,7 +114,13 @@ void main() {
     await tester.tap(find.byKey(const Key('discarded')));
     await tester.pumpAndSettle();
     // The passphrase is remembered from the previous test in this process.
-    if (find.byKey(const Key('passphrase-field')).evaluate().isNotEmpty) {
+    if (find
+        .descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        )
+        .evaluate()
+        .isNotEmpty) {
       await enterPassphrase(tester);
     }
     final name = tester.widget<Text>(find.byKey(const Key('flat-name')));

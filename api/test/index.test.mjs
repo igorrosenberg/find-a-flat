@@ -35,7 +35,7 @@ test('/api/flats returns the rows of the flat table', async () => {
   assert.deepEqual(await (await call('/api/flats', rows)).json(), rows);
 });
 
-test('writes are refused and unknown API paths are 404', async () => {
-  assert.equal((await call('/api/flats', [], { method: 'POST' })).status, 405);
+test('other methods are refused and unknown API paths are 404', async () => {
+  assert.equal((await call('/api/flats', [], { method: 'PUT' })).status, 405);
   assert.equal((await call('/api/nope')).status, 404);
 });

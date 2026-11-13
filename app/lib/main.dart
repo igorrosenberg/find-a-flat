@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
+import 'add_flat_page.dart';
 import 'flat_detail.dart';
 import 'top_bar.dart';
 
@@ -23,23 +24,25 @@ class FindAFlatApp extends StatelessWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
-  Route<void> _homeRoute([
-    RouteSettings settings = const RouteSettings(name: '/home'),
-  ]) => MaterialPageRoute(
-    settings: settings,
-    builder: (_) => HomePage(client: client ?? http.Client()),
-  );
-
   static final _detailPath = RegExp(r'^/flats/(\d+)$');
 
-  /// /flats/:id is a property's detail page; other paths show the list.
   Route<void> _route(RouteSettings settings) {
-    final m = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
-    if (m == null) return _homeRoute(settings);
+    final c = client ?? http.Client();
+    final detail = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
+    // Unknown paths show the list until their pages land.
+    final Widget page = switch (settings.name) {
+      '/flats/new' => AddFlatPage(client: c),
+      _ when detail != null => FlatDetailPage(
+        id: int.parse(detail[1]!),
+        client: c,
+      ),
+      _ => HomePage(client: c),
+    };
     return MaterialPageRoute(
-      settings: RouteSettings(name: '/flats/${m[1]}'),
-      builder: (_) =>
-          FlatDetailPage(id: int.parse(m[1]!), client: client ?? http.Client()),
+      settings: settings.name == null || settings.name == '/'
+          ? const RouteSettings(name: '/home')
+          : settings,
+      builder: (_) => page,
     );
   }
 
@@ -49,12 +52,9 @@ class FindAFlatApp extends StatelessWidget {
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       navigatorObservers: navigatorObservers,
-      // A detail page opened directly keeps the list underneath, for Back.
-      // Paths without a page yet show the list.
-      onGenerateInitialRoutes: (name) => [
-        _homeRoute(),
-        if (_detailPath.hasMatch(Uri.parse(name).path))
-          _route(RouteSettings(name: name)),
+      // Open the page for the URL directly, with no back stack under it.
+      onGenerateInitialRoutes: (initial) => [
+        _route(RouteSettings(name: initial)),
       ],
       onGenerateRoute: _route,
     );

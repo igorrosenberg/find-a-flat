@@ -1,19 +1,17 @@
-// Write check: every write needs the WRITE_PASSPHRASE secret in an
-// X-Passphrase header. Minimal version for the detail page; the passphrase
-// work (issue #8) owns this module and may replace it.
-
-export const WRITES_DISABLED =
-  'Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker.';
-
-/** Returns an error Response when the write is not allowed, or null. */
-export function requireWrite(request, env) {
+// Write check for every write endpoint. Minimal stand-in: the passphrase
+// issue (#8) owns the full behaviour (rate limiting, error page) and replaces
+// this file. Returns a Response to send back, or null when the write may go on:
+// 503 when no secret is set, 401 when X-Passphrase is missing or wrong.
+export async function requireWrite(request, env) {
   const secret = env.WRITE_PASSPHRASE;
-  if (typeof secret !== 'string' || secret === '') {
-    return errorResponse(WRITES_DISABLED, 503);
+  if (!secret) {
+    return json(
+      { error: 'Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker.' },
+      503,
+    );
   }
-  const given = request.headers.get('x-passphrase') ?? '';
-  if (!constantTimeEqual(given, secret)) {
-    return errorResponse('Wrong passphrase', 401);
+  if (!constantTimeEqual(request.headers.get('x-passphrase') ?? '', secret)) {
+    return json({ error: 'Wrong passphrase' }, 401);
   }
   return null;
 }
@@ -27,8 +25,8 @@ function constantTimeEqual(a, b) {
   return diff === 0;
 }
 
-function errorResponse(error, status) {
-  return new Response(JSON.stringify({ error }), {
+function json(body, status) {
+  return new Response(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8' },
   });

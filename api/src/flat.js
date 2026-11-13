@@ -16,12 +16,12 @@ export async function handleFlat(request, env, id, deps = {}) {
       return flat ? json(flat) : json({ error: 'Not found' }, 404);
     }
     case 'PATCH': {
-      const denied = requireWrite(request, env);
+      const denied = await requireWrite(request, env);
       if (denied) return denied;
       return patchFlat(request, env.DB, id, deps.geocode ?? geocode);
     }
     case 'DELETE': {
-      const denied = requireWrite(request, env);
+      const denied = await requireWrite(request, env);
       if (denied) return denied;
       const { meta } = await env.DB.prepare('DELETE FROM flat WHERE id = ?').bind(id).run();
       return meta?.changes ? new Response(null, { status: 204 }) : json({ error: 'Not found' }, 404);

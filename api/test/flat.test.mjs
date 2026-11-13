@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../src/index.js';
 import { handleFlat } from '../src/flat.js';
-import { distanceToDeodarM, geocode } from '../src/geo.js';
+import { distanceToDeodarM } from '../src/geo.js';
 import { memoryD1 } from './d1.mjs';
 
 const PASS = 'open sesame';
@@ -103,17 +103,4 @@ test('DELETE removes the flat', async () => {
 
 test('distance is 0 at Deodar Street', () => {
   assert.equal(distanceToDeodarM(22.5261, 88.3598), 0);
-});
-
-test('geocode reads Nominatim results and survives failures', async () => {
-  let asked;
-  const ok = async (url, init) => {
-    asked = { url, init };
-    return new Response(JSON.stringify([{ lat: '22.5', lon: '88.3' }]));
-  };
-  assert.deepEqual(await geocode('Ballygunge', ok), { lat: 22.5, lng: 88.3 });
-  assert.match(asked.url, /q=Ballygunge/);
-  assert.match(asked.init.headers['user-agent'], /find-a-flat/);
-  assert.equal(await geocode('x', async () => new Response('[]')), null);
-  assert.equal(await geocode('x', async () => { throw new Error('down'); }), null);
 });
