@@ -97,4 +97,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('add page'), findsOneWidget);
   });
+
+  testWidgets('+ and − buttons zoom the map in and out', (tester) async {
+    await _pumpMap(tester);
+    double zoom() =>
+        MapCamera.of(tester.element(find.byKey(const Key('zoom-in')))).zoom;
+    final start = zoom();
+    await tester.tap(find.byKey(const Key('zoom-in')));
+    await tester.pumpAndSettle();
+    expect(zoom(), closeTo(start + 1, 0.001));
+    await tester.tap(find.byKey(const Key('zoom-out')));
+    await tester.tap(find.byKey(const Key('zoom-out')));
+    await tester.pumpAndSettle();
+    expect(zoom(), closeTo(start - 1, 0.001));
+  });
 }
