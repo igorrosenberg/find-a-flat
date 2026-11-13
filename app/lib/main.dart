@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
+import 'flat_detail.dart';
+
 void main() {
   usePathUrlStrategy();
   runApp(const FindAFlatApp());
@@ -20,26 +22,42 @@ class FindAFlatApp extends StatelessWidget {
         builder: (_) => HomePage(client: client ?? http.Client()),
       );
 
+  /// /flats/:id is a property's detail page; other paths show the list.
+  Route<void> _route(String? name) {
+    final m = RegExp(r'^/flats/(\d+)$').firstMatch(Uri.parse(name ?? '').path);
+    if (m == null) return _homeRoute();
+    return MaterialPageRoute(
+      settings: RouteSettings(name: '/flats/${m[1]}'),
+      builder: (_) => FlatDetailPage(
+          id: int.parse(m[1]!), client: client ?? http.Client()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
-      // Only one page for now: every path shows the list, with no back button.
-      onGenerateInitialRoutes: (_) => [_homeRoute()],
-      onGenerateRoute: (_) => _homeRoute(),
+      // A detail page opened directly keeps the list underneath, for Back.
+      onGenerateInitialRoutes: (name) {
+        final route = _route(name);
+        return route.settings.name == '/home' ? [route] : [_homeRoute(), route];
+      },
+      onGenerateRoute: (settings) => _route(settings.name),
     );
   }
 }
 
 class Flat {
   Flat.fromJson(Map<String, dynamic> json)
-      : name = json['name'] as String,
+      : id = json['id'] as int,
+        name = json['name'] as String,
         price = json['price'] as int?,
         sizeSqft = json['size_sqft'] as int?,
         distanceM = json['distance_m'] as int?,
         discarded = (json['discarded'] as int? ?? 0) == 1;
 
+  final int id;
   final String name;
   final int? price;
   final int? sizeSqft;
