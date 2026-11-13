@@ -22,6 +22,7 @@ class _BlankTiles extends TileProvider {
 const _flats =
     '['
     '{"id":1,"name":"Lake view","price":9500000,"size_sqft":1100,'
+    '"bedrooms":3,"bathrooms":2,'
     '"distance_m":1800,"lat":22.51,"lng":88.36,"discarded":0},'
     '{"id":2,"name":"Old block","price":10500000,"size_sqft":900,'
     '"distance_m":2500,"lat":22.54,"lng":88.37,"discarded":1},'
@@ -76,6 +77,7 @@ void main() {
     expect(find.text('Lake view'), findsOneWidget);
     expect(find.text('₹0.95 Cr'), findsOneWidget);
     expect(find.text('1100 sq ft'), findsOneWidget);
+    expect(find.text('B(B) 3(2)'), findsOneWidget);
     await tester.tap(find.text('Open details'));
     await tester.pumpAndSettle();
     expect(find.text('detail page 1'), findsOneWidget);

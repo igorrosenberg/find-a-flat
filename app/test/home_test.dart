@@ -14,9 +14,9 @@ MockClient _api(String body) => MockClient(
 
 const _threeFlats =
     '['
-    '{"id":3,"name":"Cheap far","price":8000000,"size_sqft":900,"distance_m":5000,"discarded":0},'
-    '{"id":2,"name":"Rejected","price":12000000,"size_sqft":1500,"distance_m":null,"discarded":1},'
-    '{"id":1,"name":"Big near","price":9500000,"size_sqft":1100,"distance_m":1800,"discarded":0}'
+    '{"id":3,"name":"Cheap far","price":8000000,"size_sqft":900,"bedrooms":2,"bathrooms":1,"distance_m":5000,"discarded":0},'
+    '{"id":2,"name":"Rejected","price":12000000,"size_sqft":1500,"bedrooms":4,"bathrooms":3,"distance_m":null,"discarded":1},'
+    '{"id":1,"name":"Big near","price":9500000,"size_sqft":1100,"bedrooms":3,"bathrooms":2,"distance_m":1800,"discarded":0}'
     ']';
 
 List<String> _names(WidgetTester tester) => tester
@@ -45,6 +45,7 @@ void main() {
     expect(find.text('Big near'), findsOneWidget);
     expect(find.text('₹0.95 Cr'), findsOneWidget);
     expect(find.text('1.8 km'), findsOneWidget);
+    expect(find.text('3(2)'), findsOneWidget);
     expect(find.text('–'), findsOneWidget);
     for (final link in ['List', 'Map']) {
       expect(find.widgetWithText(TextButton, link), findsOneWidget);
@@ -87,6 +88,10 @@ void main() {
     await tester.tap(find.text('Price'));
     await tester.pumpAndSettle();
     expect(_names(tester), ['Rejected', 'Big near', 'Cheap far']);
+    await tester.ensureVisible(find.text('B(B)'));
+    await tester.tap(find.text('B(B)'));
+    await tester.pumpAndSettle();
+    expect(_names(tester), ['Cheap far', 'Big near', 'Rejected']);
     // The table is wider than the test screen, so scroll the header into view.
     await tester.ensureVisible(find.text('Distance to Deodar Street'));
     await tester.tap(find.text('Distance to Deodar Street'));
@@ -134,7 +139,7 @@ void main() {
       expect(find.byType(DataTable), findsNothing);
       expect(rowNames(tester), ['Cheap far', 'Rejected', 'Big near']);
       expect(
-        find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km'),
+        find.text('₹0.95 Cr  ·  1100 sq ft  ·  3(2)  ·  1.8 km'),
         findsOneWidget,
       );
       for (final link in ['List', 'Map']) {
@@ -183,6 +188,9 @@ void main() {
     expect(formatCrore(null), '–');
     expect(formatKm(2345), '2.3 km');
     expect(formatKm(null), '–');
+    expect(formatBb(3, 2), '3(2)');
+    expect(formatBb(3, null), '3(–)');
+    expect(formatBb(null, null), '–');
   });
 }
 
