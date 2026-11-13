@@ -31,7 +31,7 @@ Four pages, each at its own URL, sharing a top bar with links to List and Map. A
 
 ### Add property
 
-1. Fields: Name (required), Address (required), Price, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional).
+1. Fields, in this order: Name (required), Price, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional), Address (required). Address is always the last field, on the add form, the edit form and the detail page.
 2. On save, the server geocodes the address to latitude and longitude and computes the distance to Deodar Street.
 3. If geocoding fails, the property is still saved, distance shows as a dash, and the detail page lets the user correct the address or drop a pin by hand.
 4. After save, the browser goes to the new property's detail page.

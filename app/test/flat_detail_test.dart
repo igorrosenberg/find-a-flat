@@ -55,6 +55,33 @@ void main() {
     expect(find.text('Old note'), findsOneWidget);
   });
 
+  testWidgets('address is the last field on the page and in Edit', (
+    tester,
+  ) async {
+    await open(tester, MockClient((_) async => ok(flatJson())));
+    double top(Finder f) => tester.getTopLeft(f).dy;
+    expect(
+      top(find.text('Distance to Deodar Street')),
+      lessThan(top(find.text('Address'))),
+    );
+    await tester.tap(find.byKey(const Key('edit')));
+    await tester.pumpAndSettle();
+    for (final key in [
+      'name',
+      'price',
+      'size_sqft',
+      'bedrooms',
+      'bathrooms',
+      'listing_url',
+    ]) {
+      expect(
+        top(find.byKey(Key('edit-$key'))),
+        lessThan(top(find.byKey(const Key('edit-address')))),
+        reason: key,
+      );
+    }
+  });
+
   testWidgets('unknown id shows not found', (tester) async {
     await open(
       tester,

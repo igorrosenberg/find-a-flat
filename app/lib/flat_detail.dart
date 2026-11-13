@@ -366,7 +366,6 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
       columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: [
-        row('Address', SelectableText(flat.address)),
         row('Price', t(formatCrore(flat.price))),
         row('Size', t(flat.sizeSqft == null ? '–' : '${flat.sizeSqft} sq ft')),
         row('Bedrooms', t(flat.bedrooms?.toString() ?? '–')),
@@ -391,6 +390,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
                 ),
         ),
         row('Distance to Deodar Street', t(formatKm(flat.distanceM))),
+        row('Address', SelectableText(flat.address)),
       ],
     );
   }
@@ -613,7 +613,6 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _field('name', 'Name', validator: _required),
-                _field('address', 'Address', validator: _required),
                 _field(
                   'price',
                   'Price (₹ crore)',
@@ -643,6 +642,7 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
                   'Listing URL (optional)',
                   validator: _link,
                 ),
+                _field('address', 'Address', validator: _required),
               ],
             ),
           ),
