@@ -1,0 +1,55 @@
+# Build the Flutter app and deploy it with the API as one Worker, on every push to main (#28).
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+      - run: flutter build web --release
+        working-directory: app
+      # Point wrangler.toml at the real D1 database, creating it on the first deploy.
+      - run: |
+          lookup() { npx --yes wrangler@4 d1 list --json | node -e '
+            const dbs = JSON.parse(require("fs").readFileSync(0, "utf8"));
+            const db = dbs.find((d) => d.name === "find-a-flat");
+            if (db) console.log(db.uuid);
+          '; }
+          id=$(lookup)
+          if [ -z "$id" ]; then npx --yes wrangler@4 d1 create find-a-flat; id=$(lookup); fi
+          test -n "$id"
+          sed -i "s/^database_id = .*/database_id = \"$id\"/" wrangler.toml
+          echo "D1 database find-a-flat: $id"
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - run: npx --yes wrangler@4 d1 migrations apply DB --remote
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - run: npx --yes wrangler@4 deploy
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Fail the run when a Worker secret is missing, so a broken deploy shows red here (#39).
+      - run: |
+          npx --yes wrangler@4 secret list | node -e '
+            const out = require("fs").readFileSync(0, "utf8");
+            const have = JSON.parse(out.slice(out.indexOf("["))).map((s) => s.name);
+            const missing = ["WRITE_PASSPHRASE"].filter((n) => !have.includes(n));
+            if (missing.length) { console.error("Missing Worker secret(s): " + missing.join(", ") + ". Add them as type Secret on Cloudflare (#39)."); process.exit(1); }
+            console.log("All Worker secrets present.");
+          '
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

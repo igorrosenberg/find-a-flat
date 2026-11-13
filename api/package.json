@@ -1,0 +1,9 @@
+{
+  "name": "find-a-flat-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node --test \"test/*.test.mjs\""
+  }
+}
