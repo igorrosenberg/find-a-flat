@@ -5,6 +5,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
 import 'flat_detail.dart';
+import 'top_bar.dart';
 
 void main() {
   usePathUrlStrategy();
@@ -12,24 +13,33 @@ void main() {
 }
 
 class FindAFlatApp extends StatelessWidget {
-  const FindAFlatApp({super.key, this.client});
+  const FindAFlatApp({
+    super.key,
+    this.client,
+    this.navigatorObservers = const [],
+  });
 
   /// Injected in tests; the real app uses a default client.
   final http.Client? client;
+  final List<NavigatorObserver> navigatorObservers;
 
-  Route<void> _homeRoute() => MaterialPageRoute(
-        settings: const RouteSettings(name: '/home'),
-        builder: (_) => HomePage(client: client ?? http.Client()),
-      );
+  Route<void> _homeRoute([
+    RouteSettings settings = const RouteSettings(name: '/home'),
+  ]) => MaterialPageRoute(
+    settings: settings,
+    builder: (_) => HomePage(client: client ?? http.Client()),
+  );
+
+  static final _detailPath = RegExp(r'^/flats/(\d+)$');
 
   /// /flats/:id is a property's detail page; other paths show the list.
-  Route<void> _route(String? name) {
-    final m = RegExp(r'^/flats/(\d+)$').firstMatch(Uri.parse(name ?? '').path);
-    if (m == null) return _homeRoute();
+  Route<void> _route(RouteSettings settings) {
+    final m = _detailPath.firstMatch(Uri.parse(settings.name ?? '').path);
+    if (m == null) return _homeRoute(settings);
     return MaterialPageRoute(
       settings: RouteSettings(name: '/flats/${m[1]}'),
-      builder: (_) => FlatDetailPage(
-          id: int.parse(m[1]!), client: client ?? http.Client()),
+      builder: (_) =>
+          FlatDetailPage(id: int.parse(m[1]!), client: client ?? http.Client()),
     );
   }
 
@@ -38,24 +48,27 @@ class FindAFlatApp extends StatelessWidget {
     return MaterialApp(
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
+      navigatorObservers: navigatorObservers,
       // A detail page opened directly keeps the list underneath, for Back.
-      onGenerateInitialRoutes: (name) {
-        final route = _route(name);
-        return route.settings.name == '/home' ? [route] : [_homeRoute(), route];
-      },
-      onGenerateRoute: (settings) => _route(settings.name),
+      // Paths without a page yet show the list.
+      onGenerateInitialRoutes: (name) => [
+        _homeRoute(),
+        if (_detailPath.hasMatch(Uri.parse(name).path))
+          _route(RouteSettings(name: name)),
+      ],
+      onGenerateRoute: _route,
     );
   }
 }
 
 class Flat {
   Flat.fromJson(Map<String, dynamic> json)
-      : id = json['id'] as int,
-        name = json['name'] as String,
-        price = json['price'] as int?,
-        sizeSqft = json['size_sqft'] as int?,
-        distanceM = json['distance_m'] as int?,
-        discarded = (json['discarded'] as int? ?? 0) == 1;
+    : id = json['id'] as int,
+      name = json['name'] as String,
+      price = json['price'] as int?,
+      sizeSqft = json['size_sqft'] as int?,
+      distanceM = json['distance_m'] as int?,
+      discarded = (json['discarded'] as int? ?? 0) == 1;
 
   final int id;
   final String name;
@@ -81,6 +94,39 @@ Future<List<Flat>> fetchFlats(http.Client client) async {
   return body.map((e) => Flat.fromJson(e as Map<String, dynamic>)).toList();
 }
 
+/// Whether the list hides discarded flats. Off by default; kept for the
+/// session so the map can follow the same setting.
+final hideDiscarded = ValueNotifier<bool>(false);
+
+/// Columns the list can be sorted by, in table order.
+enum SortColumn { name, price, size, distance }
+
+/// Sorts [flats] by [column]; a null [column] means newest first. Missing
+/// values always go last, whichever the direction.
+List<Flat> sortFlats(List<Flat> flats, SortColumn? column, bool ascending) {
+  final sorted = [...flats];
+  if (column == null) {
+    sorted.sort((a, b) => b.id.compareTo(a.id));
+    return sorted;
+  }
+  Comparable<Object>? key(Flat f) => switch (column) {
+    SortColumn.name => f.name.toLowerCase(),
+    SortColumn.price => f.price,
+    SortColumn.size => f.sizeSqft,
+    SortColumn.distance => f.distanceM,
+  } as Comparable<Object>?;
+  sorted.sort((a, b) {
+    final ka = key(a), kb = key(b);
+    if (ka == null || kb == null) {
+      if (ka == kb) return b.id.compareTo(a.id);
+      return ka == null ? 1 : -1;
+    }
+    final c = ka.compareTo(kb);
+    return c != 0 ? (ascending ? c : -c) : b.id.compareTo(a.id);
+  });
+  return sorted;
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.client});
 
@@ -92,42 +138,77 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final Future<List<Flat>> _flats = fetchFlats(widget.client);
+  SortColumn? _sortColumn;
+  bool _ascending = true;
+
+  void _sort(SortColumn column, bool ascending) => setState(() {
+    _sortColumn = column;
+    _ascending = ascending;
+  });
+
+  Widget _addButton(BuildContext context) => FilledButton.icon(
+    onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
+    icon: const Icon(Icons.add),
+    label: const Text('Add property'),
+  );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Find a flat')),
+      appBar: const TopBar(),
       body: FutureBuilder<List<Flat>>(
         future: _flats,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Could not load flats: ${snapshot.error}'));
+            return Center(
+              child: Text('Could not load flats: ${snapshot.error}'),
+            );
           }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           final flats = snapshot.data!;
           if (flats.isEmpty) {
-            return const Center(child: Text('No flats yet.'));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('No flats yet.'),
+                  const SizedBox(height: 16),
+                  _addButton(context),
+                ],
+              ),
+            );
           }
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(16),
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Name')),
-                DataColumn(label: Text('Price')),
-                DataColumn(label: Text('Size (sq ft)'), numeric: true),
-                DataColumn(label: Text('Distance to Deodar Street')),
-              ],
-              rows: [
-                for (final f in flats)
-                  DataRow(cells: [
-                    _cell(f.name, f.discarded),
-                    _cell(formatCrore(f.price), f.discarded),
-                    _cell(f.sizeSqft?.toString() ?? '–', f.discarded),
-                    _cell(formatKm(f.distanceM), f.discarded),
-                  ]),
+          return ValueListenableBuilder<bool>(
+            valueListenable: hideDiscarded,
+            builder: (context, hide, _) => ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _addButton(context),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Switch(
+                          value: hide,
+                          onChanged: (v) => hideDiscarded.value = v,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Hide discarded'),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _table(context, flats, hide),
+                ),
               ],
             ),
           );
@@ -136,11 +217,58 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  DataCell _cell(String text, bool discarded) => DataCell(Text(
-        text,
-        style: discarded
-            ? const TextStyle(
-                decoration: TextDecoration.lineThrough, color: Colors.grey)
-            : null,
-      ));
+  Widget _table(BuildContext context, List<Flat> flats, bool hide) {
+    final shown = sortFlats(
+      [
+        for (final f in flats)
+          if (!hide || !f.discarded) f,
+      ],
+      _sortColumn,
+      _ascending,
+    );
+    DataColumn column(String label, SortColumn c, {bool numeric = false}) =>
+        DataColumn(
+          label: Text(label),
+          numeric: numeric,
+          onSort: (_, asc) =>
+              // First click on a column sorts ascending, then it toggles.
+              _sort(c, _sortColumn == c ? asc : true),
+        );
+    return DataTable(
+      showCheckboxColumn: false,
+      sortColumnIndex: _sortColumn?.index,
+      sortAscending: _ascending,
+      columns: [
+        column('Name', SortColumn.name),
+        column('Price', SortColumn.price, numeric: true),
+        column('Size (sq ft)', SortColumn.size, numeric: true),
+        column('Distance to Deodar Street', SortColumn.distance, numeric: true),
+      ],
+      rows: [
+        for (final f in shown)
+          DataRow(
+            onSelectChanged: (_) =>
+                Navigator.of(context).pushNamed('/flats/${f.id}'),
+            cells: [
+              _cell(f.name, f.discarded),
+              _cell(formatCrore(f.price), f.discarded),
+              _cell(f.sizeSqft?.toString() ?? '–', f.discarded),
+              _cell(formatKm(f.distanceM), f.discarded),
+            ],
+          ),
+      ],
+    );
+  }
+
+  DataCell _cell(String text, bool discarded) => DataCell(
+    Text(
+      text,
+      style: discarded
+          ? const TextStyle(
+              decoration: TextDecoration.lineThrough,
+              color: Colors.grey,
+            )
+          : null,
+    ),
+  );
 }

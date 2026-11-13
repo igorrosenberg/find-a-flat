@@ -11,25 +11,26 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'main.dart' show formatCrore, formatKm;
 import 'passphrase.dart';
+import 'top_bar.dart';
 
 const notesMax = 10000;
 const deodarStreet = LatLng(22.5261, 88.3598);
 
 class FlatDetail {
   FlatDetail.fromJson(Map<String, dynamic> j)
-      : id = j['id'] as int,
-        name = j['name'] as String,
-        address = j['address'] as String,
-        price = j['price'] as int?,
-        sizeSqft = j['size_sqft'] as int?,
-        bedrooms = j['bedrooms'] as int?,
-        bathrooms = j['bathrooms'] as int?,
-        listingUrl = j['listing_url'] as String?,
-        lat = (j['lat'] as num?)?.toDouble(),
-        lng = (j['lng'] as num?)?.toDouble(),
-        distanceM = j['distance_m'] as int?,
-        notes = j['notes'] as String? ?? '',
-        discarded = (j['discarded'] as int? ?? 0) == 1;
+    : id = j['id'] as int,
+      name = j['name'] as String,
+      address = j['address'] as String,
+      price = j['price'] as int?,
+      sizeSqft = j['size_sqft'] as int?,
+      bedrooms = j['bedrooms'] as int?,
+      bathrooms = j['bathrooms'] as int?,
+      listingUrl = j['listing_url'] as String?,
+      lat = (j['lat'] as num?)?.toDouble(),
+      lng = (j['lng'] as num?)?.toDouble(),
+      distanceM = j['distance_m'] as int?,
+      notes = j['notes'] as String? ?? '',
+      discarded = (j['discarded'] as int? ?? 0) == 1;
 
   final int id;
   final String name;
@@ -92,7 +93,9 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
       final res = await widget.client.get(_url);
       if (res.statusCode == 404) throw NotFound();
       if (res.statusCode != 200) {
-        throw Exception('GET /api/flats/${widget.id} returned ${res.statusCode}');
+        throw Exception(
+          'GET /api/flats/${widget.id} returned ${res.statusCode}',
+        );
       }
       _show(FlatDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>));
     } catch (e) {
@@ -123,20 +126,25 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
 
   /// Sends a PATCH and shows the saved flat. Returns the response, or null
   /// if the user cancelled the passphrase prompt.
-  Future<http.Response?> _patch(Map<String, Object?> body,
-      {String? done}) async {
+  Future<http.Response?> _patch(
+    Map<String, Object?> body, {
+    String? done,
+  }) async {
     setState(() => _busy = true);
     try {
       final res = await sendWrite(
         context,
-        (headers) => widget.client.patch(_url,
-            headers: {'content-type': 'application/json', ...headers},
-            body: jsonEncode(body)),
+        (headers) => widget.client.patch(
+          _url,
+          headers: {'content-type': 'application/json', ...headers},
+          body: jsonEncode(body),
+        ),
       );
       if (res == null) return null;
       if (res.statusCode == 200) {
-        final saved =
-            FlatDetail.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+        final saved = FlatDetail.fromJson(
+          jsonDecode(res.body) as Map<String, dynamic>,
+        );
         // Keep unsaved typing in the notes box when saving something else.
         final typed = _notes.text;
         _show(saved);
@@ -160,8 +168,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
     await _patch({'notes': _notes.text}, done: 'Notes saved');
   }
 
-  Future<void> _setDiscarded(bool value) =>
-      _patch({'discarded': value});
+  Future<void> _setDiscarded(bool value) => _patch({'discarded': value});
 
   Future<void> _dropPin(LatLng p) async {
     setState(() => _pinMode = false);
@@ -178,10 +185,11 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
           final res = await _patch(body, done: 'Saved');
           if (res == null) return const {};
           if (res.statusCode == 400) {
-            final fields = (jsonDecode(res.body)
-                as Map<String, dynamic>)['fields'] as Map<String, dynamic>?;
+            final fields =
+                (jsonDecode(res.body) as Map<String, dynamic>)['fields']
+                    as Map<String, dynamic>?;
             return {
-              for (final e in (fields ?? {}).entries) e.key: '${e.value}'
+              for (final e in (fields ?? {}).entries) e.key: '${e.value}',
             };
           }
           return res.statusCode == 200 ? null : const {};
@@ -199,14 +207,17 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
         content: Text('"${flat.name}" will be removed for good.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
-              key: const Key('confirm-delete'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete')),
+            key: const Key('confirm-delete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -214,7 +225,9 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
     setState(() => _busy = true);
     try {
       final res = await sendWrite(
-          context, (headers) => widget.client.delete(_url, headers: headers));
+        context,
+        (headers) => widget.client.delete(_url, headers: headers),
+      );
       if (res == null) return;
       if (res.statusCode == 204 || res.statusCode == 404) {
         if (!mounted) return;
@@ -233,22 +246,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Find a flat'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/home', (_) => false),
-              child: const Text('List')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pushNamed('/map'),
-              child: const Text('Map')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pushNamed('/flats/new'),
-              child: const Text('Add property')),
-          const ForgetPassphraseButton(),
-        ],
-      ),
+      appBar: const TopBar(onForgetPassphrase: forgetPassphrase),
       body: _body(context),
     );
   }
@@ -256,14 +254,19 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
   Widget _body(BuildContext context) {
     if (_loadError is NotFound) {
       return Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Property not found.'),
-          const SizedBox(height: 12),
-          FilledButton(
-              onPressed: () => Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/home', (_) => false),
-              child: const Text('Back to the list')),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Property not found.'),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/home', (_) => false),
+              child: const Text('Back to the list'),
+            ),
+          ],
+        ),
       );
     }
     if (_loadError != null) {
@@ -284,8 +287,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
               flat.name,
               key: const Key('flat-name'),
               style: theme.textTheme.headlineSmall?.copyWith(
-                decoration:
-                    flat.discarded ? TextDecoration.lineThrough : null,
+                decoration: flat.discarded ? TextDecoration.lineThrough : null,
                 color: flat.discarded ? Colors.grey : null,
               ),
             ),
@@ -311,8 +313,9 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
               maxLines: 12,
               maxLength: notesMax,
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Viewing notes, questions for the agent…'),
+                border: OutlineInputBorder(),
+                hintText: 'Viewing notes, questions for the agent…',
+              ),
               onChanged: (_) => setState(() {}),
             ),
             Align(
@@ -324,22 +327,27 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
               ),
             ),
             const SizedBox(height: 24),
-            Wrap(spacing: 12, runSpacing: 12, children: [
-              OutlinedButton.icon(
-                key: const Key('edit'),
-                onPressed: _busy ? null : _edit,
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit'),
-              ),
-              OutlinedButton.icon(
-                key: const Key('delete'),
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error),
-                onPressed: _busy ? null : _delete,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Delete'),
-              ),
-            ]),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('edit'),
+                  onPressed: _busy ? null : _edit,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Edit'),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('delete'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                  onPressed: _busy ? null : _delete,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Delete'),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -348,14 +356,15 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
 
   Widget _fields(FlatDetail flat) {
     final url = flat.listingUrl;
-    TableRow row(String label, Widget value) => TableRow(children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 6, right: 16),
-            child: Text(label, style: const TextStyle(color: Colors.black54)),
-          ),
-          Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6), child: value),
-        ]);
+    TableRow row(String label, Widget value) => TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 6, bottom: 6, right: 16),
+          child: Text(label, style: const TextStyle(color: Colors.black54)),
+        ),
+        Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: value),
+      ],
+    );
     Text t(String s) => Text(s);
     return Table(
       columnWidths: const {0: IntrinsicColumnWidth(), 1: FlexColumnWidth()},
@@ -374,11 +383,14 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
                   alignment: Alignment.centerLeft,
                   child: InkWell(
                     onTap: () => launchUrl(Uri.parse(url)),
-                    child: Text(url,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline)),
+                    child: Text(
+                      url,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
                   ),
                 ),
         ),
@@ -395,8 +407,9 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
         width: 28,
         height: 28,
         child: Tooltip(
-            message: 'Deodar Street',
-            child: Icon(Icons.star, color: Colors.deepOrange, size: 28)),
+          message: 'Deodar Street',
+          child: Icon(Icons.star, color: Colors.deepOrange, size: 28),
+        ),
       ),
       if (point != null)
         Marker(
@@ -404,57 +417,65 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
           width: 36,
           height: 36,
           alignment: Alignment.topCenter,
-          child: Icon(Icons.location_pin,
-              size: 36, color: flat.discarded ? Colors.grey : Colors.teal),
+          child: Icon(
+            Icons.location_pin,
+            size: 36,
+            color: flat.discarded ? Colors.grey : Colors.teal,
+          ),
         ),
     ];
     final hint = _pinMode
         ? 'Tap the map where the property is.'
         : point == null
-            ? 'The address could not be found on the map. Fix the address with Edit, or drop the pin by hand.'
-            : null;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      if (hint != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(hint, key: const Key('pin-hint')),
-        ),
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          height: 260,
-          child: FlutterMap(
-            key: ValueKey('map-${flat.lat}-${flat.lng}'),
-            options: MapOptions(
-              initialCenter: point ?? deodarStreet,
-              initialZoom: point == null ? 13 : 15,
-              onTap: _pinMode ? (_, p) => _dropPin(p) : null,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'find_a_flat',
+        ? 'The address could not be found on the map. Fix the address with Edit, or drop the pin by hand.'
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hint != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(hint, key: const Key('pin-hint')),
+          ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 260,
+            child: FlutterMap(
+              key: ValueKey('map-${flat.lat}-${flat.lng}'),
+              options: MapOptions(
+                initialCenter: point ?? deodarStreet,
+                initialZoom: point == null ? 13 : 15,
+                onTap: _pinMode ? (_, p) => _dropPin(p) : null,
               ),
-              MarkerLayer(markers: markers),
-              const SimpleAttributionWidget(
-                  source: Text('OpenStreetMap contributors')),
-            ],
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'find_a_flat',
+                ),
+                MarkerLayer(markers: markers),
+                const SimpleAttributionWidget(
+                  source: Text('OpenStreetMap contributors'),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: 8),
-      TextButton.icon(
-        key: const Key('pin-mode'),
-        onPressed:
-            _busy ? null : () => setState(() => _pinMode = !_pinMode),
-        icon: Icon(_pinMode ? Icons.close : Icons.push_pin_outlined),
-        label: Text(_pinMode
-            ? 'Cancel'
-            : point == null
+        const SizedBox(height: 8),
+        TextButton.icon(
+          key: const Key('pin-mode'),
+          onPressed: _busy ? null : () => setState(() => _pinMode = !_pinMode),
+          icon: Icon(_pinMode ? Icons.close : Icons.push_pin_outlined),
+          label: Text(
+            _pinMode
+                ? 'Cancel'
+                : point == null
                 ? 'Drop pin by hand'
-                : 'Move pin'),
-      ),
-    ]);
+                : 'Move pin',
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -476,15 +497,19 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
     'name': TextEditingController(text: widget.flat.name),
     'address': TextEditingController(text: widget.flat.address),
     'price': TextEditingController(
-        text: widget.flat.price == null
-            ? ''
-            : (widget.flat.price! / 1e7).toStringAsFixed(2)),
-    'size_sqft':
-        TextEditingController(text: widget.flat.sizeSqft?.toString() ?? ''),
-    'bedrooms':
-        TextEditingController(text: widget.flat.bedrooms?.toString() ?? ''),
-    'bathrooms':
-        TextEditingController(text: widget.flat.bathrooms?.toString() ?? ''),
+      text: widget.flat.price == null
+          ? ''
+          : (widget.flat.price! / 1e7).toStringAsFixed(2),
+    ),
+    'size_sqft': TextEditingController(
+      text: widget.flat.sizeSqft?.toString() ?? '',
+    ),
+    'bedrooms': TextEditingController(
+      text: widget.flat.bedrooms?.toString() ?? '',
+    ),
+    'bathrooms': TextEditingController(
+      text: widget.flat.bathrooms?.toString() ?? '',
+    ),
     'listing_url': TextEditingController(text: widget.flat.listingUrl ?? ''),
   };
   Map<String, String> _serverErrors = {};
@@ -535,8 +560,9 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
       'price': _v('price').isEmpty
           ? null
           : (num.parse(_v('price')) * 1e7).round(),
-      'size_sqft':
-          _v('size_sqft').isEmpty ? null : num.parse(_v('size_sqft')).round(),
+      'size_sqft': _v('size_sqft').isEmpty
+          ? null
+          : num.parse(_v('size_sqft')).round(),
       'bedrooms': whole('bedrooms'),
       'bathrooms': whole('bathrooms'),
       'listing_url': _v('listing_url').isEmpty ? null : _v('listing_url'),
@@ -552,8 +578,12 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
     }
   }
 
-  Widget _field(String key, String label,
-      {String? Function(String?)? validator, bool number = false}) {
+  Widget _field(
+    String key,
+    String label, {
+    String? Function(String?)? validator,
+    bool number = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -581,31 +611,55 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
         child: Form(
           key: _form,
           child: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              _field('name', 'Name', validator: _required),
-              _field('address', 'Address', validator: _required),
-              _field('price', 'Price (₹ crore)',
-                  validator: _positive, number: true),
-              _field('size_sqft', 'Size (sq ft)',
-                  validator: _positive, number: true),
-              _field('bedrooms', 'Bedrooms (optional)',
-                  validator: _whole, number: true),
-              _field('bathrooms', 'Bathrooms (optional)',
-                  validator: _whole, number: true),
-              _field('listing_url', 'Listing URL (optional)',
-                  validator: _link),
-            ]),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _field('name', 'Name', validator: _required),
+                _field('address', 'Address', validator: _required),
+                _field(
+                  'price',
+                  'Price (₹ crore)',
+                  validator: _positive,
+                  number: true,
+                ),
+                _field(
+                  'size_sqft',
+                  'Size (sq ft)',
+                  validator: _positive,
+                  number: true,
+                ),
+                _field(
+                  'bedrooms',
+                  'Bedrooms (optional)',
+                  validator: _whole,
+                  number: true,
+                ),
+                _field(
+                  'bathrooms',
+                  'Bathrooms (optional)',
+                  validator: _whole,
+                  number: true,
+                ),
+                _field(
+                  'listing_url',
+                  'Listing URL (optional)',
+                  validator: _link,
+                ),
+              ],
+            ),
           ),
         ),
       ),
       actions: [
         TextButton(
-            onPressed: _saving ? null : () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
-            key: const Key('edit-save'),
-            onPressed: _saving ? null : _submit,
-            child: const Text('Save')),
+          key: const Key('edit-save'),
+          onPressed: _saving ? null : _submit,
+          child: const Text('Save'),
+        ),
       ],
     );
   }

@@ -7,7 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-Map<String, Object?> flatJson({bool discarded = false, double? lat = 22.55}) => {
+Map<String, Object?> flatJson({bool discarded = false, double? lat = 22.55}) =>
+    {
       'id': 3,
       'name': 'Park flat',
       'address': '1 Park St, Kolkata',
@@ -26,15 +27,19 @@ Map<String, Object?> flatJson({bool discarded = false, double? lat = 22.55}) => 
     };
 
 http.Response ok(Object body, [int status = 200]) => http.Response(
-    jsonEncode(body), status,
-    headers: {'content-type': 'application/json; charset=utf-8'});
+  jsonEncode(body),
+  status,
+  headers: {'content-type': 'application/json; charset=utf-8'},
+);
 
 Future<void> open(WidgetTester tester, http.Client client) async {
   await tester.binding.setSurfaceSize(const Size(900, 1600));
-  await tester.pumpWidget(MaterialApp(
-    routes: {'/home': (_) => const Text('LIST PAGE')},
-    home: FlatDetailPage(id: 3, client: client),
-  ));
+  await tester.pumpWidget(
+    MaterialApp(
+      routes: {'/home': (_) => const Text('LIST PAGE')},
+      home: FlatDetailPage(id: 3, client: client),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -56,7 +61,10 @@ void main() {
   });
 
   testWidgets('unknown id shows not found', (tester) async {
-    await open(tester, MockClient((_) async => ok({'error': 'Not found'}, 404)));
+    await open(
+      tester,
+      MockClient((_) async => ok({'error': 'Not found'}, 404)),
+    );
     expect(find.text('Property not found.'), findsOneWidget);
   });
 
@@ -66,16 +74,18 @@ void main() {
     expect(find.text('Drop pin by hand'), findsOneWidget);
   });
 
-  testWidgets('saving notes sends a PATCH with the passphrase',
-      (tester) async {
+  testWidgets('saving notes sends a PATCH with the passphrase', (tester) async {
     late http.Request patch;
-    await open(tester, MockClient((req) async {
-      if (req.method == 'PATCH') {
-        patch = req;
-        return ok({...flatJson(), 'notes': 'New note'});
-      }
-      return ok(flatJson());
-    }));
+    await open(
+      tester,
+      MockClient((req) async {
+        if (req.method == 'PATCH') {
+          patch = req;
+          return ok({...flatJson(), 'notes': 'New note'});
+        }
+        return ok(flatJson());
+      }),
+    );
     await tester.enterText(find.byKey(const Key('notes')), 'New note');
     await tester.pump();
     await tester.tap(find.byKey(const Key('save-notes')));
@@ -87,9 +97,14 @@ void main() {
   });
 
   testWidgets('ticking discarded strikes the name through', (tester) async {
-    await open(tester, MockClient((req) async => req.method == 'PATCH'
-        ? ok(flatJson(discarded: true))
-        : ok(flatJson())));
+    await open(
+      tester,
+      MockClient(
+        (req) async => req.method == 'PATCH'
+            ? ok(flatJson(discarded: true))
+            : ok(flatJson()),
+      ),
+    );
     await tester.tap(find.byKey(const Key('discarded')));
     await tester.pumpAndSettle();
     // The passphrase is remembered from the previous test in this process.
@@ -101,9 +116,17 @@ void main() {
   });
 
   testWidgets('edit shows server field errors', (tester) async {
-    await open(tester, MockClient((req) async => req.method == 'PATCH'
-        ? ok({'error': 'Invalid fields', 'fields': {'address': 'Required'}}, 400)
-        : ok(flatJson())));
+    await open(
+      tester,
+      MockClient(
+        (req) async => req.method == 'PATCH'
+            ? ok({
+                'error': 'Invalid fields',
+                'fields': {'address': 'Required'},
+              }, 400)
+            : ok(flatJson()),
+      ),
+    );
     await tester.tap(find.byKey(const Key('edit')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('edit-price')), 'abc');
@@ -116,16 +139,20 @@ void main() {
     expect(find.text('Required'), findsOneWidget);
   });
 
-  testWidgets('delete asks to confirm, then goes back to the list',
-      (tester) async {
+  testWidgets('delete asks to confirm, then goes back to the list', (
+    tester,
+  ) async {
     var deleted = false;
-    await open(tester, MockClient((req) async {
-      if (req.method == 'DELETE') {
-        deleted = true;
-        return http.Response('', 204);
-      }
-      return ok(flatJson());
-    }));
+    await open(
+      tester,
+      MockClient((req) async {
+        if (req.method == 'DELETE') {
+          deleted = true;
+          return http.Response('', 204);
+        }
+        return ok(flatJson());
+      }),
+    );
     await tester.tap(find.byKey(const Key('delete')));
     await tester.pumpAndSettle();
     expect(find.text('Delete this property?'), findsOneWidget);
@@ -136,8 +163,9 @@ void main() {
   });
 
   testWidgets('the app routes /flats/:id to the detail page', (tester) async {
-    final client = MockClient((req) async =>
-        req.url.path == '/api/flats/3' ? ok(flatJson()) : ok([]));
+    final client = MockClient(
+      (req) async => req.url.path == '/api/flats/3' ? ok(flatJson()) : ok([]),
+    );
     await tester.pumpWidget(FindAFlatApp(client: client));
     await tester.pumpAndSettle();
     final nav = tester.state<NavigatorState>(find.byType(Navigator));

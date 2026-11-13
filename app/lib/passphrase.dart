@@ -45,7 +45,9 @@ Future<String?> _ask(BuildContext context, String? error) {
     context: context,
     builder: (context) {
       void submit() => Navigator.pop(
-          context, controller.text.isEmpty ? null : controller.text);
+        context,
+        controller.text.isEmpty ? null : controller.text,
+      );
       return AlertDialog(
         title: const Text('Passphrase'),
         content: TextField(
@@ -76,11 +78,11 @@ class ForgetPassphraseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TextButton(
-        onPressed: () {
-          forgetPassphrase();
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Passphrase forgotten')));
-        },
-        child: const Text('Forget passphrase'),
-      );
+    onPressed: () {
+      forgetPassphrase();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Passphrase forgotten')));
+    },
+    child: const Text('Forget passphrase'),
+  );
 }
