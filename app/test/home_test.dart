@@ -1,9 +1,12 @@
 import 'package:find_a_flat/main.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets('shows the empty state when there are no flats', (tester) async {
     final client = MockClient((_) async => http.Response('[]', 200));
     await tester.pumpWidget(FindAFlatApp(client: client));

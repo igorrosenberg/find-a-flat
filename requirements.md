@@ -57,14 +57,15 @@ Four pages, each at its own URL, sharing a top bar with links to List, Map and A
 1. Reads stay public: every page and every GET on the API works without a passphrase.
 2. Every write needs the passphrase: add, edit, saving notes, ticking discarded, and delete. The Worker checks it on the server.
 3. The passphrase is a Worker secret named `WRITE_PASSPHRASE`, set with `wrangler secret put WRITE_PASSPHRASE` or in the Cloudflare dashboard under the Worker's Settings, Variables and Secrets. It is never committed to the repo.
-4. If `WRITE_PASSPHRASE` is undefined or empty, all writes are blocked with HTTP 503 and the message "Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker." Every page shows that message as a banner, and the Add, Save and Delete buttons are disabled.
-5. A missing or wrong passphrase returns HTTP 401 "Wrong passphrase", and the form keeps what was typed.
-6. The first write asks for the passphrase. The browser remembers it until "Forget passphrase" in the top bar is clicked, and sends it in an `X-Passphrase` header over HTTPS.
-7. The check uses a constant-time comparison, and failed attempts are rate limited.
+4. If `WRITE_PASSPHRASE` is undefined or empty, the Worker serves only an error page, on every path, with no app and no API. The page returns HTTP 503 and says "Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker." (Igor, 2026-11-13; this replaces the earlier banner with disabled buttons.)
+5. A missing or wrong passphrase returns HTTP 401 "Wrong passphrase". The prompt opens again saying so, and the form keeps what was typed.
+6. The first write asks for the passphrase in a prompt. The browser remembers it (local storage) until "Forget passphrase" in the top bar is clicked, and sends it in an `X-Passphrase` header over HTTPS. Cancelling the prompt sends nothing.
+7. The check uses a constant-time comparison. After 5 failed attempts from one IP within 15 minutes, writes from that IP get HTTP 429 until the 15 minutes are up, even with the right passphrase. Failures are counted in the D1 table `write_failure`.
+8. In the code, a write endpoint calls `requireWrite(request, env)` from `api/src/auth.js`, and the app sends writes through `sendWrite` from `app/lib/passphrase.dart`, which also provides the Forget passphrase button.
 
 ## Data model
 
-One D1 table, `flat` (migration `api/migrations/0001_create_flat.sql`). The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
+One D1 table for the data, `flat` (migration `api/migrations/0001_create_flat.sql`), plus `write_failure` for rate limiting wrong passphrases (migration `0002_create_write_failure.sql`). The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -89,7 +90,7 @@ Distance is recomputed whenever the address, the pin or the reference point chan
 A single Cloudflare Worker serves the Flutter web app as static assets and a small JSON API, backed by one D1 database. See the README for the diagram.
 
 - **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
-- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. Only `GET /api/flats` exists so far. The Worker runs first for `/` and `/api/*`.
+- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. Only `GET /api/flats` exists so far. The Worker runs first on every path, so it can serve only the error page while `WRITE_PASSPHRASE` is unset.
 - **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
 - **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. Default is OpenStreetMap Nominatim (free, 1 request per second, needs a contact User-Agent); Mapbox or Google are drop-in alternatives if accuracy is poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
@@ -110,7 +111,7 @@ These are filled in so building can start; each one maps to a question below.
 | Map provider | OpenStreetMap via flutter_map |
 | Geocoder | Nominatim, with manual pin as fallback |
 | Discarded rows | Shown struck through in list, not hidden |
-| Write access | Reads public; writes need the WRITE_PASSPHRASE secret, blocked if it is unset |
+| Write access | Reads public; writes need the WRITE_PASSPHRASE secret; if it is unset the Worker serves only an error page |
 
 ## Open questions for Igor
 

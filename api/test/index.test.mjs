@@ -4,13 +4,14 @@ import worker from '../src/index.js';
 
 function env(rows = []) {
   return {
+    WRITE_PASSPHRASE: 'open sesame',
     DB: { prepare: () => ({ all: async () => ({ results: rows }) }) },
     ASSETS: { fetch: async (req) => new Response(`asset ${new URL(req.url).pathname}`) },
   };
 }
 
-const call = (path, rows, init) =>
-  worker.fetch(new Request(`https://example.com${path}`, init), env(rows));
+const call = (path, rows, init, overrides = {}) =>
+  worker.fetch(new Request(`https://example.com${path}`, init), { ...env(rows), ...overrides });
 
 test('/ redirects to /home', async () => {
   const res = await call('/');
@@ -39,3 +40,14 @@ test('writes are refused and unknown API paths are 404', async () => {
   assert.equal((await call('/api/flats', [], { method: 'POST' })).status, 405);
   assert.equal((await call('/api/nope')).status, 404);
 });
+
+for (const value of [undefined, '']) {
+  test(`every path is the error page when WRITE_PASSPHRASE is ${JSON.stringify(value)}`, async () => {
+    for (const path of ['/', '/home', '/api/flats', '/main.dart.js']) {
+      const res = await call(path, [], undefined, { WRITE_PASSPHRASE: value });
+      assert.equal(res.status, 503, path);
+      assert.match(res.headers.get('content-type'), /text\/html/);
+      assert.match(await res.text(), /Set the WRITE_PASSPHRASE secret on this Worker\./);
+    }
+  });
+}

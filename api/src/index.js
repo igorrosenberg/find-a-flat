@@ -1,8 +1,12 @@
 // Find a flat: one Worker serving the Flutter web app (static assets from
 // ../app/build/web) and a small JSON API, backed by D1 (binding DB).
 
+import { noPassphrasePage, passphraseIsSet } from './auth.js';
+
 export default {
   async fetch(request, env) {
+    // Without the write passphrase the Worker serves nothing but an error page.
+    if (!passphraseIsSet(env)) return noPassphrasePage();
     const url = new URL(request.url);
     if (url.pathname === '/') {
       return Response.redirect(new URL('/home', url).toString(), 302);

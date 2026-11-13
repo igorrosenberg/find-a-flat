@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 
+import 'passphrase.dart';
+
 void main() {
   usePathUrlStrategy();
   runApp(const FindAFlatApp());
@@ -78,7 +80,10 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Find a flat')),
+      appBar: AppBar(
+        title: const Text('Find a flat'),
+        actions: const [ForgetPassphraseButton()],
+      ),
       body: FutureBuilder<List<Flat>>(
         future: _flats,
         builder: (context, snapshot) {
