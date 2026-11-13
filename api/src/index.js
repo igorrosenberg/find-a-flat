@@ -2,6 +2,7 @@
 // ../app/build/web) and a small JSON API, backed by D1 (binding DB).
 
 import { gate, requireWrite } from './auth.js';
+import { handleFlat } from './flat.js';
 import { geocode, distanceToDeodarM } from './geo.js';
 
 export default {
@@ -22,6 +23,10 @@ export default {
         return createFlat(request, env);
       }
       return json({ error: 'Method not allowed' }, 405, { allow: 'GET, HEAD, POST' });
+    }
+    const one = url.pathname.match(/^\/api\/flats\/(\d+)$/);
+    if (one) {
+      return handleFlat(request, env, Number(one[1]));
     }
     if (url.pathname.startsWith('/api/')) {
       return json({ error: 'Not found' }, 404);
