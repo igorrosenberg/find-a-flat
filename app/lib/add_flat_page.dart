@@ -141,7 +141,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
   Widget build(BuildContext context) {
     const numberKeyboard = TextInputType.numberWithOptions(decimal: true);
     return Scaffold(
-      appBar: const TopBar(onForgetPassphrase: forgetPassphrase),
+      appBar: const TopBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Center(

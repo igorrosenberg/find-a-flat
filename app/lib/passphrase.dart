@@ -1,76 +1,34 @@
-// Write passphrase, sent as X-Passphrase on every write.
+// Writes from the app. The Worker only serves the app after the passphrase
+// has been entered on its login page, and the browser then sends the session
+// cookie with every request, so pages need no passphrase handling of their own.
 //
-// Minimal stand-in so the add form works on its own: the passphrase issue
-// (#8) owns this file and replaces it, keeping these signatures.
+// A page that writes calls:
+//
+//   final res = await sendWrite(context, (headers) =>
+//       client.post(url, headers: {...headers, 'content-type': 'application/json'},
+//           body: jsonEncode(data)));
+//   if (res == null) return; // not sent; keep the form as typed
+//
+// [headers] is empty today; it stays so pages need not change if writes ever
+// need extra headers.
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-String? _passphrase;
+const sessionEndedMessage =
+    'Your session has ended. Reload the page and enter the passphrase.';
 
-/// Runs [send] with the X-Passphrase header. Asks for the passphrase on first
-/// use; on 401 forgets it, says "Wrong passphrase" and asks again. Returns
-/// null if the user cancels, so the caller keeps what was typed.
+/// Sends a write. On 401 (the session cookie is gone, e.g. the passphrase was
+/// changed) it says so and returns null, so the caller keeps what was typed.
 Future<http.Response?> sendWrite(
   BuildContext context,
   Future<http.Response> Function(Map<String, String> headers) send,
 ) async {
-  String? error;
-  while (true) {
-    var passphrase = _passphrase;
-    if (passphrase == null) {
-      passphrase = await _ask(context, error);
-      if (passphrase == null) return null;
-    }
-    final res = await send({'X-Passphrase': passphrase});
-    if (res.statusCode != 401) {
-      _passphrase = passphrase;
-      return res;
-    }
-    _passphrase = null;
-    error = 'Wrong passphrase';
-    if (!context.mounted) return null;
+  final res = await send(const {});
+  if (res.statusCode != 401) return res;
+  if (context.mounted) {
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(const SnackBar(content: Text(sessionEndedMessage)));
   }
-}
-
-Future<String?> _ask(BuildContext context, String? error) {
-  final controller = TextEditingController();
-  void submit(BuildContext ctx) => Navigator.of(ctx).pop(controller.text);
-  return showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Passphrase'),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        obscureText: true,
-        decoration: InputDecoration(
-          labelText: 'Write passphrase',
-          errorText: error,
-        ),
-        onSubmitted: (_) => submit(ctx),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: () => submit(ctx), child: const Text('OK')),
-      ],
-    ),
-  );
-}
-
-/// Drops the remembered passphrase; the top bar's "Forget passphrase".
-void forgetPassphrase() => _passphrase = null;
-
-/// Top bar action that drops the remembered passphrase.
-class ForgetPassphraseButton extends StatelessWidget {
-  const ForgetPassphraseButton({super.key});
-
-  @override
-  Widget build(BuildContext context) => TextButton(
-    onPressed: forgetPassphrase,
-    child: const Text('Forget passphrase'),
-  );
+  return null;
 }

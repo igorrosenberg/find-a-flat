@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// The top bar shared by every page: links to List, Map and Add property,
-/// plus "Forget passphrase".
-///
-/// [onForgetPassphrase] clears the remembered write passphrase. The button is
-/// hidden until the passphrase prompt (issue #8) passes a callback in.
+/// The top bar shared by every page: links to List, Map and Add property.
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
-  const TopBar({super.key, this.onForgetPassphrase});
-
-  final VoidCallback? onForgetPassphrase;
+  const TopBar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -39,11 +33,6 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
           onPressed: () => _go(context, '/flats/new'),
           child: const Text('Add property'),
         ),
-        if (onForgetPassphrase != null)
-          TextButton(
-            onPressed: onForgetPassphrase,
-            child: const Text('Forget passphrase'),
-          ),
         const SizedBox(width: 8),
       ],
     );

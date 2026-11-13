@@ -4,7 +4,7 @@ Started 2026-11-04 by Igor Rosenberg, updated on 2026-11-13 to match what is bui
 
 ## Overview
 
-A small public webapp to track candidate flats: list them in a table, add new ones, keep notes on each, mark rejects as discarded, and see them all on a map. It runs on Cloudflare Workers with a D1 database. Anyone can read it; writes need a shared passphrase.
+A small private webapp to track candidate flats: list them in a table, add new ones, keep notes on each, mark rejects as discarded, and see them all on a map. It runs on Cloudflare Workers with a D1 database. Everything, reading included, needs a shared passphrase.
 
 Out of scope for v1: user accounts, photos and file uploads, scraping listings from property sites, editing history, multi-user conflict handling, and travel time in traffic, which is planned as phase 2.
 
@@ -52,19 +52,23 @@ Four pages, each at its own URL, sharing a top bar with links to List, Map and A
 3. Clicking a pin opens a popup with name, price, size and a link to the detail page.
 4. Discarded properties show as grey pins, hidden when the list's hide-discarded toggle is on.
 
-### Write passphrase
+### Passphrase
 
-1. Reads stay public: every page and every GET on the API works without a passphrase.
-2. Every write needs the passphrase: add, edit, saving notes, ticking discarded, and delete. The Worker checks it on the server.
-3. The passphrase is a Worker secret named `WRITE_PASSPHRASE`, set with `wrangler secret put WRITE_PASSPHRASE` or in the Cloudflare dashboard under the Worker's Settings, Variables and Secrets. It is never committed to the repo.
-4. If `WRITE_PASSPHRASE` is undefined or empty, all writes are blocked with HTTP 503 and the message "Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker." Every page shows that message as a banner, and the Add, Save and Delete buttons are disabled.
-5. A missing or wrong passphrase returns HTTP 401 "Wrong passphrase", and the form keeps what was typed.
-6. The first write asks for the passphrase. The browser remembers it until "Forget passphrase" in the top bar is clicked, and sends it in an `X-Passphrase` header over HTTPS.
-7. The check uses a constant-time comparison, and failed attempts are rate limited.
+Igor, 2026-11-13: the passphrase is the access control for the whole app. Without it nobody sees anything, not even the list.
+
+1. Every page, static file and API call needs the passphrase. Without a valid session, a page shows a login page (HTTP 401) and an API call returns HTTP 401 `{"error":"Passphrase needed"}`.
+2. The login page has one password field. The right passphrase sets an HttpOnly, Secure, SameSite=Lax session cookie for a year and goes back to the page that was asked for. The browser then sends the cookie with every request, so the app itself never asks for the passphrase.
+3. A wrong passphrase shows the login page again with "Wrong passphrase".
+4. There is no "Forget passphrase" or log out button (Igor, 2026-11-13). Changing the secret signs every browser out, because the cookie is derived from the passphrase.
+5. The passphrase is a Worker secret named `WRITE_PASSPHRASE`, set with `wrangler secret put WRITE_PASSPHRASE` or in the Cloudflare dashboard under the Worker's Settings, Variables and Secrets. It is never committed to the repo.
+6. If `WRITE_PASSPHRASE` is undefined or empty, the Worker serves only an error page on every path, with no app and no API. The page returns HTTP 503 and says "Writes are disabled until a passphrase is set. Set the WRITE_PASSPHRASE secret on this Worker."
+7. The check uses a constant-time comparison. After 5 wrong passphrases from one IP within 15 minutes, logins from that IP get HTTP 429 until the 15 minutes are up, even with the right passphrase. Failures are counted in the D1 table `write_failure`.
+8. If a write gets 401 (the session ended, e.g. the passphrase changed), the app says "Your session has ended. Reload the page and enter the passphrase." and the form keeps what was typed.
+9. In the code, `gate` in `api/src/auth.js` runs first on every request. Write endpoints also call `requireWrite(request, env)`, and the app sends writes through `sendWrite` from `app/lib/passphrase.dart`.
 
 ## Data model
 
-One D1 table, `flat` (migration `api/migrations/0001_create_flat.sql`). The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
+One D1 table for the data, `flat` (migration `api/migrations/0001_create_flat.sql`), plus `write_failure` for rate limiting wrong passphrases on the login page (migration `0002_create_write_failure.sql`). The Deodar Street reference point is a config value, not a row: 16/1 Deodar St, Ballygunge, Kolkata 700019, at 22.5261, 88.3598.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -89,11 +93,11 @@ Distance is recomputed whenever the address, the pin or the reference point chan
 A single Cloudflare Worker serves the Flutter web app as static assets and a small JSON API, backed by one D1 database. See the README for the diagram.
 
 - **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
-- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. `GET /api/flats` and `POST /api/flats` exist so far. The Worker runs first for `/` and `/api/*`.
+- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. `GET /api/flats` and `POST /api/flats` exist so far. The Worker runs first on every path, so it can check the session and serve the login or error page.
 - **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
 - **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. Default is OpenStreetMap Nominatim (free, 1 request per second, needs a contact User-Agent); Mapbox or Google are drop-in alternatives if accuracy is poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.
-- **Access:** public reads, passphrase-protected writes (see Write passphrase), no user accounts.
+- **Access:** everything behind one shared passphrase (see Passphrase), no user accounts.
 - **Deploy:** the Check workflow runs on every pull request; the Deploy workflow builds the app, applies D1 migrations and runs `wrangler deploy` on every push to `main`. Fits in the Workers and D1 free tiers.
 - **Devices:** usable on a phone; the table scrolls horizontally on narrow screens.
 
@@ -110,7 +114,7 @@ These are filled in so building can start; each one maps to a question below.
 | Map provider | OpenStreetMap via flutter_map |
 | Geocoder | Nominatim, with manual pin as fallback |
 | Discarded rows | Shown struck through in list, not hidden |
-| Write access | Reads public; writes need the WRITE_PASSPHRASE secret, blocked if it is unset |
+| Access | The whole app needs the WRITE_PASSPHRASE secret, entered once per browser on a login page; if it is unset the Worker serves only an error page |
 
 ## Open questions for Igor
 
@@ -121,6 +125,6 @@ The reference point is confirmed. None of the rest blocks a first version, and e
 - [x] Kilometres confirmed for v1.
 - [x] Price confirmed as purchase price in rupees, around ₹1 crore.
 - [ ] Should discarded properties be shown struck through, hidden by default, or sorted to the bottom?
-- [x] Write access confirmed: a shared passphrase stored as a Cloudflare secret, reads stay public.
+- [x] Access confirmed: a shared passphrase stored as a Cloudflare secret guards the whole app, reads included (changed 2026-11-13).
 - [x] Extra fields confirmed: optional bedrooms and bathrooms. Any status beyond discarded worth adding later (e.g. viewing booked)?
 - [x] Code is in github.com/igorrosenberg/find-a-flat and deploys to Cloudflare from GitHub Actions.

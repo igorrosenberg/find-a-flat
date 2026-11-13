@@ -6,6 +6,9 @@ It also serves the Flutter web build from `../app/build/web`.
 - `/` redirects to `/home`.
 - `/home` is the Flutter app, which lists the rows of the `flat` table.
 - `/api/flats` returns those rows as JSON.
+- Everything needs the passphrase from the `WRITE_PASSPHRASE` secret: without
+  a session cookie, pages show a login page and `/api/*` returns 401 (`gate` in
+  `src/auth.js`). If the secret is unset or empty, every path is a 503 error page.
 
 ## Run locally
 
@@ -13,7 +16,8 @@ It also serves the Flutter web build from `../app/build/web`.
     npx wrangler@4 d1 migrations apply DB --local
     npx wrangler@4 dev
 
-Then open http://localhost:8787/. Tests: `node --test "test/*.test.mjs"`.
+Put `WRITE_PASSPHRASE=something` in `api/.dev.vars` first (it is git-ignored),
+or you only get the error page. Then open http://localhost:8787/. Tests: `node --test "test/*.test.mjs"`.
 
 ## Deploy
 

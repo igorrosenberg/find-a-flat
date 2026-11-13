@@ -4,8 +4,14 @@ import worker from '../src/index.js';
 import { handleFlat } from '../src/flat.js';
 import { distanceToDeodarM } from '../src/geo.js';
 import { memoryD1 } from './d1.mjs';
+import { SESSION_COOKIE, sessionToken } from '../src/auth.js';
 
 const PASS = 'open sesame';
+
+// The session cookie the login page sets for a passphrase.
+const cookieFor = async (pass) => `${SESSION_COOKIE}=${await sessionToken({ WRITE_PASSPHRASE: pass })}`;
+const SESSION = await cookieFor(PASS);
+const get = (url) => new Request(url, { headers: { cookie: SESSION } });
 
 function setup() {
   const DB = memoryD1();
@@ -18,15 +24,15 @@ function setup() {
   return { DB, WRITE_PASSPHRASE: PASS, ASSETS: { fetch: async () => new Response('asset') } };
 }
 
-const req = (method, body, pass = PASS) =>
+const req = (method, body, cookie = SESSION) =>
   new Request('https://example.com/api/flats/1', {
     method,
-    headers: { 'content-type': 'application/json', ...(pass == null ? {} : { 'x-passphrase': pass }) },
+    headers: { 'content-type': 'application/json', ...(cookie == null ? {} : { cookie }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
 test('GET returns every column of one flat', async () => {
-  const res = await worker.fetch(new Request('https://example.com/api/flats/1'), setup());
+  const res = await worker.fetch(get('https://example.com/api/flats/1'), setup());
   assert.equal(res.status, 200);
   const flat = await res.json();
   assert.equal(flat.name, 'Park flat');
@@ -37,18 +43,18 @@ test('GET returns every column of one flat', async () => {
 
 test('GET of an unknown or malformed id is 404', async () => {
   const env = setup();
-  assert.equal((await worker.fetch(new Request('https://example.com/api/flats/99'), env)).status, 404);
-  assert.equal((await worker.fetch(new Request('https://example.com/api/flats/abc'), env)).status, 404);
+  assert.equal((await worker.fetch(get('https://example.com/api/flats/99'), env)).status, 404);
+  assert.equal((await worker.fetch(get('https://example.com/api/flats/abc'), env)).status, 404);
 });
 
-test('writes need the passphrase', async () => {
+test('writes need a session', async () => {
   const env = setup();
   assert.equal((await worker.fetch(req('PATCH', { notes: 'x' }, null), env)).status, 401);
-  assert.equal((await worker.fetch(req('DELETE', undefined, 'wrong'), env)).status, 401);
+  assert.equal((await worker.fetch(req('DELETE', undefined, await cookieFor('wrong')), env)).status, 401);
   const unset = { ...env, WRITE_PASSPHRASE: '' };
   const res = await worker.fetch(req('PATCH', { notes: 'x' }), unset);
   assert.equal(res.status, 503);
-  assert.match((await res.json()).error, /WRITE_PASSPHRASE/);
+  assert.match(await res.text(), /WRITE_PASSPHRASE/);
 });
 
 test('PATCH saves notes and discarded', async () => {
@@ -98,7 +104,7 @@ test('DELETE removes the flat', async () => {
   const env = setup();
   assert.equal((await worker.fetch(req('DELETE'), env)).status, 204);
   assert.equal((await worker.fetch(req('DELETE'), env)).status, 404);
-  assert.equal((await worker.fetch(new Request('https://example.com/api/flats/1'), env)).status, 404);
+  assert.equal((await worker.fetch(get('https://example.com/api/flats/1'), env)).status, 404);
 });
 
 test('distance is 0 at Deodar Street', () => {
