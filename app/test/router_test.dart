@@ -2,70 +2,11 @@ import 'dart:convert';
 
 import 'package:find_a_flat/main.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-/// A browser history in miniature: it records what the app writes to the
-/// browser, and replays entries the way Back and Forward do.
-class _History {
-  _History(this.tester) {
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.navigation,
-      (call) async {
-        if (call.method != 'routeInformationUpdated') return null;
-        final args = call.arguments as Map;
-        final entry = (args['uri'] as String, args['state']);
-        if (args['replace'] == true && entries.isNotEmpty) {
-          entries[pos] = entry;
-        } else {
-          entries
-            ..removeRange(pos + 1, entries.length)
-            ..add(entry);
-          pos = entries.length - 1;
-        }
-        return null;
-      },
-    );
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.navigation,
-        null,
-      ),
-    );
-  }
-
-  final WidgetTester tester;
-  final entries = <(String, Object?)>[];
-  var pos = -1;
-
-  List<String> get urls => [for (final e in entries) e.$1];
-  String get current => entries[pos].$1;
-
-  Future<void> show() async {
-    final (uri, state) = entries[pos];
-    final message = const JSONMethodCodec().encodeMethodCall(
-      MethodCall('pushRouteInformation', {'location': uri, 'state': state}),
-    );
-    await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-      SystemChannels.navigation.name,
-      message,
-      (_) {},
-    );
-    await tester.pumpAndSettle();
-  }
-
-  Future<void> back() async {
-    pos--;
-    await show();
-  }
-
-  Future<void> forward() async {
-    pos++;
-    await show();
-  }
-}
+import 'browser_history.dart';
 
 const _flats =
     '['
@@ -98,6 +39,7 @@ http.Client _api() => MockClient((req) async {
     ('GET', '/api/flats/2') => jsonEncode(_flat(2, 'Zed flat')),
     ('POST', '/api/flats') => jsonEncode(_flat(7, 'New flat')),
     ('GET', '/api/flats/7') => jsonEncode(_flat(7, 'New flat')),
+    ('PATCH', '/api/flats/2') => jsonEncode(_flat(2, 'Zed flat 2')),
     _ => '[]',
   };
   return http.Response(
@@ -107,11 +49,11 @@ http.Client _api() => MockClient((req) async {
   );
 });
 
-Future<_History> _start(WidgetTester tester) async {
+Future<BrowserHistory> _start(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1200, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  final history = _History(tester);
+  final history = BrowserHistory(tester);
   await tester.pumpWidget(FindAFlatApp(client: _api()));
   await tester.pumpAndSettle();
   return history;
@@ -196,7 +138,7 @@ void main() {
     expect(find.text('Alpha flat'), findsWidgets);
   });
 
-  testWidgets('a saved form is replaced by the new flat, not kept in Back', (
+  testWidgets('saving goes back to the list: Home > add > Home', (
     tester,
   ) async {
     final h = await _start(tester);
@@ -209,8 +151,21 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('price')), '1');
     await tester.enterText(find.byKey(const ValueKey('size_sqft')), '900');
     await _tapText(tester, 'Save');
-    expect(h.urls, ['/home', '/flats/7']);
-    await h.back();
+    // The browser went Back to the list: no extra history entry.
+    expect(h.urls, ['/home', '/flats/new']);
+    expect(h.current, '/home');
+    expect(find.byType(DataTable), findsOneWidget);
+    expect(find.byKey(const ValueKey('name')), findsNothing);
+  });
+
+  testWidgets('saving an opened flat goes back to the list', (tester) async {
+    final h = await _start(tester);
+    await _tapText(tester, 'Zed flat');
+    expect(h.current, '/flats/2');
+    await tester.enterText(find.byKey(const ValueKey('name')), 'Zed flat 2');
+    await _tapText(tester, 'Save');
+    expect(h.urls, ['/home', '/flats/2']);
+    expect(h.current, '/home');
     expect(find.byType(DataTable), findsOneWidget);
   });
 }

@@ -41,7 +41,7 @@ Future<void> _pumpMap(WidgetTester tester) async {
   await tester.pumpWidget(
     MaterialApp(
       routes: {
-        '/flats/1': (_) => const Text('detail page 1'),
+        '/flats/1': (_) => const Text('flat page 1'),
         '/flats/new': (_) => const Text('add page'),
       },
       home: MapPage(client: client, tileProvider: _BlankTiles()),
@@ -68,7 +68,7 @@ void main() {
     expect(_icon(tester, 'pin-2').color, Colors.grey);
   });
 
-  testWidgets('a pin opens a popup that links to the detail page', (
+  testWidgets('a pin opens a popup that links to the property page', (
     tester,
   ) async {
     await _pumpMap(tester);
@@ -78,9 +78,9 @@ void main() {
     expect(find.text('₹0.95 Cr'), findsOneWidget);
     expect(find.text('1100 sq ft'), findsOneWidget);
     expect(find.text('B(B) 3(2)'), findsOneWidget);
-    await tester.tap(find.text('Open details'));
+    await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    expect(find.text('detail page 1'), findsOneWidget);
+    expect(find.text('flat page 1'), findsOneWidget);
   });
 
   testWidgets('hide discarded removes grey pins', (tester) async {

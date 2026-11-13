@@ -130,7 +130,7 @@ function nearby(points) {
 
 // Returns { lat, lng } for an address, or null if it can't be found or the
 // geocoders fail. Never throws: a flat is saved even without coordinates,
-// and the detail page then offers to drop the pin by hand.
+// and the property page then offers to drop the pin by hand.
 //
 // Tries each simplified query on Nominatim; if Nominatim refuses or fails, or
 // finds nothing for any of them, the same queries go to Photon.
