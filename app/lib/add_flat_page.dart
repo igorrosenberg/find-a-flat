@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'app_router.dart';
+import 'flat_detail.dart' show notesMax;
 import 'passphrase.dart';
 import 'top_bar.dart';
 
@@ -28,6 +29,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
       'bedrooms',
       'bathrooms',
       'listing_url',
+      'notes',
       'address',
     ])
       f: TextEditingController(),
@@ -60,6 +62,7 @@ class _AddFlatPageState extends State<AddFlatPage> {
       'bedrooms': number('bedrooms'),
       'bathrooms': number('bathrooms'),
       'listing_url': _text('listing_url').isEmpty ? null : _text('listing_url'),
+      'notes': _text('notes').isEmpty ? null : _fields['notes']!.text,
     };
   }
 
@@ -115,6 +118,9 @@ class _AddFlatPageState extends State<AddFlatPage> {
     String? Function(String)? validator,
     TextInputType? keyboard,
     String? hint,
+    int minLines = 1,
+    int maxLines = 1,
+    int? maxLength,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -122,9 +128,20 @@ class _AddFlatPageState extends State<AddFlatPage> {
         key: ValueKey(field),
         controller: _fields[field],
         keyboardType: keyboard,
+        minLines: minLines,
+        maxLines: maxLines,
+        maxLength: maxLength,
+        // Enforce any limit without showing a character counter.
+        buildCounter: (
+          _, {
+          required currentLength,
+          required isFocused,
+          maxLength,
+        }) => null,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
+          alignLabelWithHint: maxLines > 1,
           border: const OutlineInputBorder(),
         ),
         forceErrorText: _serverErrors[field],
@@ -189,6 +206,15 @@ class _AddFlatPageState extends State<AddFlatPage> {
                     'Listing URL (optional)',
                     validator: httpUrl,
                     keyboard: TextInputType.url,
+                  ),
+                  _field(
+                    'notes',
+                    'Notes (optional)',
+                    keyboard: TextInputType.multiline,
+                    hint: 'Viewing notes, questions for the agent…',
+                    minLines: 4,
+                    maxLines: 12,
+                    maxLength: notesMax,
                   ),
                   _field('address', 'Address', validator: requiredText),
                   if (_error != null)

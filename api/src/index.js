@@ -2,7 +2,7 @@
 // ../app/build/web) and a small JSON API, backed by D1 (binding DB).
 
 import { gate, requireWrite } from './auth.js';
-import { handleFlat } from './flat.js';
+import { handleFlat, NOTES_MAX } from './flat.js';
 import { geocode, distanceToDeodarM } from './geo.js';
 
 export default {
@@ -69,12 +69,12 @@ async function createFlat(request, env) {
     distance_m: point ? distanceToDeodarM(point.lat, point.lng) : null,
   };
   const saved = await env.DB.prepare(
-    `INSERT INTO flat (name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+    `INSERT INTO flat (name, address, price, size_sqft, bedrooms, bathrooms, listing_url, lat, lng, distance_m, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
   )
     .bind(
       row.name, row.address, row.price, row.size_sqft, row.bedrooms, row.bathrooms,
-      row.listing_url, row.lat, row.lng, row.distance_m,
+      row.listing_url, row.lat, row.lng, row.distance_m, row.notes,
     )
     .first();
   return json(saved, 201, { location: `/api/flats/${saved.id}` });
@@ -116,6 +116,13 @@ export function validateFlat(body) {
     } catch {}
     if (!ok) errors.listing_url = 'Must be an http or https link';
   }
+
+  // Optional free text, kept as typed; blank means no notes.
+  const notes = body.notes;
+  if (notes === undefined || notes === null || notes === '') flat.notes = null;
+  else if (typeof notes !== 'string') errors.notes = 'Must be text';
+  else if (notes.length > NOTES_MAX) errors.notes = `At most ${NOTES_MAX} characters`;
+  else flat.notes = notes.trim() ? notes : null;
   return Object.keys(errors).length ? { errors } : { flat };
 }
 
