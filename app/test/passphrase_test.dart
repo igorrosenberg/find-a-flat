@@ -15,22 +15,22 @@ class _Harness {
   bool finished = false;
 
   Widget app() => MaterialApp(
-        home: Scaffold(
-          appBar: AppBar(actions: const [ForgetPassphraseButton()]),
-          body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () async {
-                result = await sendWrite(context, (headers) async {
-                  sent.add(headers[passphraseHeader]);
-                  return http.Response('{}', replies[sent.length - 1]);
-                });
-                finished = true;
-              },
-              child: const Text('Save'),
-            ),
-          ),
+    home: Scaffold(
+      appBar: AppBar(actions: const [ForgetPassphraseButton()]),
+      body: Builder(
+        builder: (context) => TextButton(
+          onPressed: () async {
+            result = await sendWrite(context, (headers) async {
+              sent.add(headers[passphraseHeader]);
+              return http.Response('{}', replies[sent.length - 1]);
+            });
+            finished = true;
+          },
+          child: const Text('Save'),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 Future<void> _type(WidgetTester tester, String text) async {
@@ -45,8 +45,9 @@ void main() {
     PassphraseStore.instance.reset();
   });
 
-  testWidgets('first write asks, later writes reuse the passphrase',
-      (tester) async {
+  testWidgets('first write asks, later writes reuse the passphrase', (
+    tester,
+  ) async {
     final h = _Harness([200, 200]);
     await tester.pumpWidget(h.app());
     expect(find.text('Forget passphrase'), findsNothing);
@@ -93,8 +94,9 @@ void main() {
     expect(h.sent, isEmpty);
   });
 
-  testWidgets('Forget passphrase makes the next write ask again',
-      (tester) async {
+  testWidgets('Forget passphrase makes the next write ask again', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({'write_passphrase': 'old'});
     final h = _Harness([200]);
     await tester.pumpWidget(h.app());

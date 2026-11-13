@@ -28,16 +28,19 @@ class PassphraseStore {
   Future<void>? _loading;
 
   Future<String?> load() async {
-    await (_loading ??= SharedPreferences.getInstance()
-        .then((p) => current.value = p.getString(_storageKey)));
+    await (_loading ??= SharedPreferences.getInstance().then(
+      (p) => current.value = p.getString(_storageKey),
+    ));
     return current.value;
   }
 
   Future<void> remember(String passphrase) async {
     await load();
     current.value = passphrase;
-    await (await SharedPreferences.getInstance())
-        .setString(_storageKey, passphrase);
+    await (await SharedPreferences.getInstance()).setString(
+      _storageKey,
+      passphrase,
+    );
   }
 
   Future<void> forget() async {
@@ -56,8 +59,10 @@ class PassphraseStore {
 
 /// Headers carrying the passphrase, asking for it first if none is remembered.
 /// Returns null if the user cancels the prompt.
-Future<Map<String, String>?> writeHeaders(BuildContext context,
-    {String? error}) async {
+Future<Map<String, String>?> writeHeaders(
+  BuildContext context, {
+  String? error,
+}) async {
   final store = PassphraseStore.instance;
   var passphrase = await store.load();
   if (passphrase == null) {
@@ -119,8 +124,10 @@ class _PassphraseDialogState extends State<PassphraseDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Changes need the shared passphrase. '
-              'This browser remembers it until you click Forget passphrase.'),
+          const Text(
+            'Changes need the shared passphrase. '
+            'This browser remembers it until you click Forget passphrase.',
+          ),
           const SizedBox(height: 16),
           TextField(
             key: const Key('passphrase-field'),
@@ -172,7 +179,8 @@ class _ForgetPassphraseButtonState extends State<ForgetPassphraseButton> {
                 await PassphraseStore.instance.forget();
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Passphrase forgotten')));
+                  const SnackBar(content: Text('Passphrase forgotten')),
+                );
               },
               child: const Text('Forget passphrase'),
             ),
