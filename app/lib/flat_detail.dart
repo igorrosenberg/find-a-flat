@@ -602,6 +602,8 @@ class _EditFlatDialogState extends State<EditFlatDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // Narrower margins than the default so the form has room on a phone.
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: const Text('Edit property'),
       content: SizedBox(
         width: 480,
