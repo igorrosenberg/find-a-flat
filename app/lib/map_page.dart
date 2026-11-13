@@ -117,9 +117,9 @@ class _MapPageState extends State<MapPage> {
               Marker(
                 point: selected.point!,
                 width: 240,
-                height: 150,
+                height: 170,
                 // Sits above the pin, which is 40 px tall.
-                alignment: const Alignment(0, -1.55),
+                alignment: const Alignment(0, -1.48),
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: _Popup(flat: selected),
@@ -162,6 +162,7 @@ class _Popup extends StatelessWidget {
             const SizedBox(height: 4),
             Text(formatCrore(flat.price)),
             Text(flat.sizeSqft == null ? '– sq ft' : '${flat.sizeSqft} sq ft'),
+            Text('B(B) ${formatBb(flat.bedrooms, flat.bathrooms)}'),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(

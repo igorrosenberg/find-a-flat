@@ -77,6 +77,8 @@ class Flat {
       name = json['name'] as String,
       price = json['price'] as int?,
       sizeSqft = json['size_sqft'] as int?,
+      bedrooms = json['bedrooms'] as int?,
+      bathrooms = json['bathrooms'] as int?,
       distanceM = json['distance_m'] as int?,
       lat = (json['lat'] as num?)?.toDouble(),
       lng = (json['lng'] as num?)?.toDouble(),
@@ -86,6 +88,8 @@ class Flat {
   final String name;
   final int? price;
   final int? sizeSqft;
+  final int? bedrooms;
+  final int? bathrooms;
   final int? distanceM;
   final double? lat;
   final double? lng;
@@ -98,6 +102,13 @@ class Flat {
 /// Price is always shown in crore with two decimals, never lakh.
 String formatCrore(int? rupees) =>
     rupees == null ? '–' : '₹${(rupees / 1e7).toStringAsFixed(2)} Cr';
+
+/// Bedrooms(bathrooms), e.g. "3(2)"; a dash for whichever is unknown, and a
+/// single dash when both are.
+String formatBb(int? bedrooms, int? bathrooms) =>
+    bedrooms == null && bathrooms == null
+    ? '–'
+    : '${bedrooms ?? '–'}(${bathrooms ?? '–'})';
 
 String formatKm(int? metres) =>
     metres == null ? '–' : '${(metres / 1000).toStringAsFixed(1)} km';
@@ -120,6 +131,7 @@ enum SortColumn {
   name('Name'),
   price('Price'),
   size('Size'),
+  bb('B(B)'),
   distance('Distance');
 
   const SortColumn(this.label);
@@ -143,6 +155,11 @@ List<Flat> sortFlats(List<Flat> flats, SortColumn? column, bool ascending) {
     SortColumn.name => f.name.toLowerCase(),
     SortColumn.price => f.price,
     SortColumn.size => f.sizeSqft,
+    // By bedrooms, then bathrooms.
+    SortColumn.bb =>
+      f.bedrooms == null && f.bathrooms == null
+          ? null
+          : (f.bedrooms ?? 0) * 1000 + (f.bathrooms ?? 0),
     SortColumn.distance => f.distanceM,
   } as Comparable<Object>?;
   sorted.sort((a, b) {
@@ -297,7 +314,8 @@ class _HomePageState extends State<HomePage> {
     ],
   );
 
-  /// One tappable row per flat: name on top, price, size and distance below.
+  /// One tappable row per flat: name on top, price, size, B(B) and distance
+  /// below.
   List<Widget> _compactRows(BuildContext context, List<Flat> shown) {
     final theme = Theme.of(context);
     return [
@@ -310,6 +328,7 @@ class _HomePageState extends State<HomePage> {
             [
               formatCrore(f.price),
               f.sizeSqft == null ? '– sq ft' : '${f.sizeSqft} sq ft',
+              formatBb(f.bedrooms, f.bathrooms),
               formatKm(f.distanceM),
             ].join('  ·  '),
             style: _style(f.discarded) ?? theme.textTheme.bodyMedium,
@@ -339,6 +358,7 @@ class _HomePageState extends State<HomePage> {
         column('Name', SortColumn.name),
         column('Price', SortColumn.price, numeric: true),
         column('Size (sq ft)', SortColumn.size, numeric: true),
+        column('B(B)', SortColumn.bb, numeric: true),
         column('Distance to Deodar Street', SortColumn.distance, numeric: true),
       ],
       rows: [
@@ -349,6 +369,7 @@ class _HomePageState extends State<HomePage> {
               _cell(f.name, f.discarded),
               _cell(formatCrore(f.price), f.discarded),
               _cell(f.sizeSqft?.toString() ?? '–', f.discarded),
+              _cell(formatBb(f.bedrooms, f.bathrooms), f.discarded),
               _cell(formatKm(f.distanceM), f.discarded),
             ],
           ),
