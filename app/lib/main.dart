@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
 
+import 'map_page.dart';
 import 'top_bar.dart';
 
 void main() {
@@ -22,12 +24,20 @@ class FindAFlatApp extends StatelessWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
-  Route<void> _homeRoute([
-    RouteSettings settings = const RouteSettings(name: '/home'),
-  ]) => MaterialPageRoute(
-    settings: settings,
-    builder: (_) => HomePage(client: client ?? http.Client()),
-  );
+  Route<void> _route(RouteSettings settings) {
+    final c = client ?? http.Client();
+    if (Uri.tryParse(settings.name ?? '')?.path == '/map') {
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => MapPage(client: c),
+      );
+    }
+    // Pages not built yet still show the list.
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (_) => HomePage(client: c),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +45,11 @@ class FindAFlatApp extends StatelessWidget {
       title: 'Find a flat',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       navigatorObservers: navigatorObservers,
-      // Only the list exists so far: every path shows it until the other pages land.
-      onGenerateInitialRoutes: (_) => [_homeRoute()],
-      onGenerateRoute: _homeRoute,
+      // The first page follows the URL path (/map), defaulting to the list.
+      onGenerateInitialRoutes: (name) => [
+        _route(RouteSettings(name: name == '/map' ? name : '/home')),
+      ],
+      onGenerateRoute: _route,
     );
   }
 }
@@ -49,6 +61,8 @@ class Flat {
       price = json['price'] as int?,
       sizeSqft = json['size_sqft'] as int?,
       distanceM = json['distance_m'] as int?,
+      lat = (json['lat'] as num?)?.toDouble(),
+      lng = (json['lng'] as num?)?.toDouble(),
       discarded = (json['discarded'] as int? ?? 0) == 1;
 
   final int id;
@@ -56,7 +70,12 @@ class Flat {
   final int? price;
   final int? sizeSqft;
   final int? distanceM;
+  final double? lat;
+  final double? lng;
   final bool discarded;
+
+  /// Where to pin the flat on a map, or null if it has no coordinates.
+  LatLng? get point => lat == null || lng == null ? null : LatLng(lat!, lng!);
 }
 
 /// Price is always shown in crore with two decimals, never lakh.
