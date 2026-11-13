@@ -310,9 +310,7 @@ class _HomePageState extends State<HomePage> {
             [
               formatCrore(f.price),
               f.sizeSqft == null ? '– sq ft' : '${f.sizeSqft} sq ft',
-              f.distanceM == null
-                  ? '– from Deodar St'
-                  : '${formatKm(f.distanceM)} from Deodar St',
+              formatKm(f.distanceM),
             ].join('  ·  '),
             style: _style(f.discarded) ?? theme.textTheme.bodyMedium,
           ),

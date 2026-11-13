@@ -134,7 +134,7 @@ void main() {
       expect(find.byType(DataTable), findsNothing);
       expect(rowNames(tester), ['Cheap far', 'Rejected', 'Big near']);
       expect(
-        find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km from Deodar St'),
+        find.text('₹0.95 Cr  ·  1100 sq ft  ·  1.8 km'),
         findsOneWidget,
       );
       for (final link in ['List', 'Map']) {
