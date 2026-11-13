@@ -145,7 +145,7 @@ export async function safeEqual(a, b) {
 export function noPassphrasePage() {
   return page(
     503,
-    'Find a flat is not configured',
+    'Flats is not configured',
     `<p>${NO_PASSPHRASE_MESSAGE}</p>
 <p>Run <code>wrangler secret put WRITE_PASSPHRASE</code>, or add it in the Cloudflare dashboard under the Worker's Settings, Variables and Secrets.</p>`,
   );
@@ -154,7 +154,7 @@ export function noPassphrasePage() {
 export function loginPage({ next, status = 401, error = null }) {
   return page(
     status,
-    'Find a flat',
+    'Flats',
     `<form method="post" action="/login">
 <label for="passphrase">Passphrase</label>
 <input id="passphrase" name="passphrase" type="password" autocomplete="current-password" autofocus required>
@@ -190,6 +190,7 @@ function page(status, title, body) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-title" content="Flats">
 <title>${escapeHtml(title)}</title>
 <style>
   :root { --bg: #fff; --fg: #1b1b1b; --muted: #5f5f5f; --line: #c4c4c4; --accent: #00695c; --error: #b3261e; --code: #eee; }

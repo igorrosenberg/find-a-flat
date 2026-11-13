@@ -63,7 +63,7 @@ class _FindAFlatAppState extends State<FindAFlatApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Find a flat',
+      title: 'Flats',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       routeInformationParser: const AppRouteParser(),
       routerDelegate: _delegate,
@@ -263,7 +263,7 @@ class _HomePageState extends State<HomePage> {
     children: [
       Switch(value: hide, onChanged: (v) => hideDiscarded.value = v),
       const SizedBox(width: 8),
-      const Text('Hide discarded'),
+      Text(hide ? 'Show discarded' : 'Hide discarded'),
     ],
   );
 
