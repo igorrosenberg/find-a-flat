@@ -13,6 +13,7 @@ import 'app_router.dart';
 import 'main.dart' show formatCrore, formatKm;
 import 'passphrase.dart';
 import 'top_bar.dart';
+import 'zoom_buttons.dart';
 
 const notesMax = 10000;
 const deodarStreet = LatLng(22.5261, 88.3598);
@@ -461,6 +462,7 @@ class _FlatDetailPageState extends State<FlatDetailPage> {
                 const SimpleAttributionWidget(
                   source: Text('OpenStreetMap contributors'),
                 ),
+                const ZoomButtons(),
               ],
             ),
           ),

@@ -6,6 +6,7 @@ import 'app_router.dart';
 import 'flat_detail.dart' show deodarStreet;
 import 'main.dart';
 import 'top_bar.dart';
+import 'zoom_buttons.dart';
 
 /// Map of every flat with coordinates, plus the Deodar Street marker.
 class MapPage extends StatefulWidget {
@@ -130,6 +131,7 @@ class _MapPageState extends State<MapPage> {
         const SimpleAttributionWidget(
           source: Text('OpenStreetMap contributors'),
         ),
+        const ZoomButtons(),
       ],
     );
   }
