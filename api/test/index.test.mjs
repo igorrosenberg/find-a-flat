@@ -1,48 +1,41 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker, { formatCrore, formatKm, escapeHtml } from '../src/index.js';
+import worker from '../src/index.js';
 
-function fakeDb(rows) {
-  return { prepare: () => ({ all: async () => ({ results: rows }) }) };
+function env(rows = []) {
+  return {
+    DB: { prepare: () => ({ all: async () => ({ results: rows }) }) },
+    ASSETS: { fetch: async (req) => new Response(`asset ${new URL(req.url).pathname}`) },
+  };
 }
 
-const get = (path, rows = []) =>
-  worker.fetch(new Request(`https://example.com${path}`), { DB: fakeDb(rows) });
+const call = (path, rows, init) =>
+  worker.fetch(new Request(`https://example.com${path}`, init), env(rows));
 
 test('/ redirects to /home', async () => {
-  const res = await get('/');
+  const res = await call('/');
   assert.equal(res.status, 302);
   assert.equal(res.headers.get('location'), 'https://example.com/home');
 });
 
-test('/home shows the empty state when the flat table is empty', async () => {
-  const res = await get('/home');
+test('/home is served by the Flutter app', async () => {
+  const res = await call('/home');
+  assert.equal(await res.text(), 'asset /home');
+});
+
+test('/api/flats returns an empty list when the table is empty', async () => {
+  const res = await call('/api/flats');
   assert.equal(res.status, 200);
-  assert.match(res.headers.get('content-type'), /text\/html/);
-  assert.match(await res.text(), /No flats yet\./);
+  assert.match(res.headers.get('content-type'), /application\/json/);
+  assert.deepEqual(await res.json(), []);
 });
 
-test('/home lists rows from the flat table', async () => {
-  const res = await get('/home', [
-    { id: 1, name: '2-bed <near> park', price: 9500000, size_sqft: 1200, distance_m: 2345, discarded: 0 },
-    { id: 2, name: 'Rejected', price: null, size_sqft: null, distance_m: null, discarded: 1 },
-  ]);
-  const html = await res.text();
-  assert.match(html, /2-bed &lt;near&gt; park/);
-  assert.match(html, /₹0\.95 Cr/);
-  assert.match(html, /2\.3 km/);
-  assert.match(html, /class="discarded"/);
+test('/api/flats returns the rows of the flat table', async () => {
+  const rows = [{ id: 1, name: 'Test flat', price: 9500000, size_sqft: 1100, distance_m: 1800, discarded: 0 }];
+  assert.deepEqual(await (await call('/api/flats', rows)).json(), rows);
 });
 
-test('unknown paths are 404 and writes are 405', async () => {
-  assert.equal((await get('/nope')).status, 404);
-  const res = await worker.fetch(new Request('https://example.com/home', { method: 'POST' }), { DB: fakeDb([]) });
-  assert.equal(res.status, 405);
-});
-
-test('formatters', () => {
-  assert.equal(formatCrore(10500000), '₹1.05 Cr');
-  assert.equal(formatCrore(null), '–');
-  assert.equal(formatKm(1500), '1.5 km');
-  assert.equal(escapeHtml(`"a"&'b'`), '&quot;a&quot;&amp;&#39;b&#39;');
+test('writes are refused and unknown API paths are 404', async () => {
+  assert.equal((await call('/api/flats', [], { method: 'POST' })).status, 405);
+  assert.equal((await call('/api/nope')).status, 404);
 });
