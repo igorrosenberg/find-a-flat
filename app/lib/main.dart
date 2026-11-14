@@ -5,9 +5,8 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-import 'add_flat_page.dart';
 import 'app_router.dart';
-import 'flat_detail.dart';
+import 'flat_page.dart';
 import 'map_page.dart';
 import 'top_bar.dart';
 
@@ -27,19 +26,16 @@ class FindAFlatApp extends StatefulWidget {
   final http.Client? client;
   final List<NavigatorObserver> navigatorObservers;
 
-  static final _detailPath = RegExp(r'^/flats/(\d+)$');
+  static final _flatPath = RegExp(r'^/flats/(\d+)$');
 
   Widget _page(String path) {
     final c = client ?? http.Client();
-    final detail = _detailPath.firstMatch(path);
+    final flat = _flatPath.firstMatch(path);
     // Unknown paths show the list until their pages land.
     return switch (path) {
-      '/flats/new' => AddFlatPage(client: c),
+      '/flats/new' => FlatPage(client: c),
       '/map' => MapPage(client: c),
-      _ when detail != null => FlatDetailPage(
-        id: int.parse(detail[1]!),
-        client: c,
-      ),
+      _ when flat != null => FlatPage(id: int.parse(flat[1]!), client: c),
       _ => HomePage(client: c),
     };
   }
@@ -126,6 +122,9 @@ Future<List<Flat>> fetchFlats(http.Client client) async {
 /// session so the map can follow the same setting.
 final hideDiscarded = ValueNotifier<bool>(false);
 
+/// Bumped when a flat is saved or deleted, so the list and map reload.
+final flatsChanged = ValueNotifier<int>(0);
+
 /// Columns the list can be sorted by, in table order.
 enum SortColumn {
   name('Name'),
@@ -184,7 +183,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final Future<List<Flat>> _flats = fetchFlats(widget.client);
+  late Future<List<Flat>> _flats = fetchFlats(widget.client);
+
+  // Reload when a flat is saved or deleted, keeping what is on screen
+  // (sort order, scroll position, map view) until the new list arrives.
+  void _reload() => setState(() {
+    _flats = fetchFlats(widget.client);
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    flatsChanged.addListener(_reload);
+  }
+
+  @override
+  void dispose() {
+    flatsChanged.removeListener(_reload);
+    super.dispose();
+  }
+
   SortColumn? _sortColumn;
   bool _ascending = true;
 

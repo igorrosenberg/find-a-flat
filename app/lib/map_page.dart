@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 
 import 'app_router.dart';
-import 'flat_detail.dart' show deodarStreet;
+import 'flat_page.dart' show deodarStreet;
 import 'main.dart';
 import 'top_bar.dart';
 import 'zoom_buttons.dart';
@@ -22,7 +22,26 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  late final Future<List<Flat>> _flats = fetchFlats(widget.client);
+  late Future<List<Flat>> _flats = fetchFlats(widget.client);
+
+  // Reload when a flat is saved or deleted, keeping what is on screen
+  // (sort order, scroll position, map view) until the new list arrives.
+  void _reload() => setState(() {
+    _flats = fetchFlats(widget.client);
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    flatsChanged.addListener(_reload);
+  }
+
+  @override
+  void dispose() {
+    flatsChanged.removeListener(_reload);
+    super.dispose();
+  }
+
   Flat? _selected;
 
   @override
@@ -169,7 +188,7 @@ class _Popup extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () => goTo(context, '/flats/${flat.id}'),
-                child: const Text('Open details'),
+                child: const Text('Open'),
               ),
             ),
           ],

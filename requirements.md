@@ -10,48 +10,52 @@ Out of scope for v1: user accounts, photos and file uploads, scraping listings f
 
 ## Pages and functional requirements
 
-Four pages, each at its own URL, sharing a top bar with links to List and Map. Add property is reached from a button on the list page and on the map page. The pages are routes of the Flutter web app; `/` redirects to `/home`. As of 2026-11-13 all four pages exist.
+Three pages, each at its own URL, sharing a top bar with links to List and Map. Add property is reached from a button on the list page and on the map page. The pages are routes of the Flutter web app; `/` redirects to `/home`.
+
+Igor, 2026-11-13: there is no separate detail page. Viewing a property and editing it happen on the same page, the property page, which is also the add form when there is no id yet. The flow is Home > property page > Home: Save (and Delete) go back to the list.
 
 | Page | URL | What it does |
 | --- | --- | --- |
 | Property list (home) | /home | Table of all properties, Add property button |
-| Add property | /flats/new | Form to create a property |
-| Property detail | /flats/:id | All fields, notes, discarded flag, edit and delete |
+| Property page, add | /flats/new | Empty form to create a property |
+| Property page, view and edit | /flats/:id | The same form filled in, plus discarded flag, distance, small map and delete |
 | Map | /map | All properties as pins on one map |
 
 ### Property list (home)
 
 1. Shows a table with columns Name, Price, Size (sq ft), B(B), Distance to Deodar Street. B(B) is bedrooms(bathrooms), e.g. "3(2)", taken from the property's Bedrooms and Bathrooms fields; an unknown number shows as a dash ("3(–)"), and a single dash when both are unknown. Sorting by B(B) orders by bedrooms, then bathrooms.
 1. On a phone (narrower than 600 px), each property is a compact row: the name, then price, size, B(B) and distance on one line, e.g. "₹0.95 Cr  ·  1100 sq ft  ·  3(2)  ·  1.8 km".
-2. Clicking anywhere on a row opens that property's detail page.
+2. Clicking anywhere on a row opens that property's page.
 3. Discarded properties stay in the table but are shown struck through and greyed out.
 4. Clicking a column header sorts by that column; default sort is newest first.
 5. A toggle hides discarded properties; it is off by default. Its label names what it will do: "Hide discarded" while they are shown, "Show discarded" while they are hidden.
 6. A single Add property button sits at the end of the list, below the last row, and opens the add form. It is not in the top bar.
 7. Empty state: a short message and the Add property button.
 
-### Add property
+### Property page (add, view and edit)
 
-1. Fields, in this order: Name (required), Price, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional), Notes (optional), Address (required). Address is always the last field, on the add form, the edit form and the detail page.
-2. On save, the server geocodes the address to latitude and longitude and computes the distance to Deodar Street.
-3. If geocoding fails, the property is still saved, distance shows as a dash, and the detail page lets the user correct the address or drop a pin by hand.
-4. After save, the browser goes to the new property's detail page.
-5. Notes is the same free-text area as on the detail page (no character counter, capped at 10,000 characters); what is typed here is what the detail page shows.
-6. Validation: price and size must be positive numbers, and bedrooms and bathrooms whole numbers of 0 or more; errors show next to the field.
+One page does all three. At /flats/new it is an empty form; at /flats/:id it loads that property into the same form, so what you see is what you edit.
 
-### Property detail
+1. Fields, in this order: Name (required), Price in crore, Size in sq ft, Bedrooms (optional), Bathrooms (optional), Listing URL (optional), Notes (optional), Address (required). Address is always the last field.
+2. Notes is a free-text area with no character counter, capped at 10,000 characters.
+3. Validation: price and size must be positive numbers, and bedrooms and bathrooms whole numbers of 0 or more; errors show next to the field, including errors the server returns.
+4. One Save button saves the whole form (POST for a new property, PATCH for an existing one). Nothing is saved until Save is pressed. After a save the app goes back to the list, which reloads. When the list is the page underneath, this is the browser's Back, so the history stays Home > property page with no extra entry; from anywhere else (the map, a typed URL) the list takes the property page's place.
+5. On save, the server geocodes the address to latitude and longitude and computes the distance to Deodar Street; on an existing property this happens only when the address changed.
+6. If geocoding fails, the property is still saved and the distance shows as a dash; opening it again lets the user correct the address or drop a pin by hand.
+7. A valid listing URL gets a button in its field that opens the ad in a new tab.
 
-1. Shows every field from the add form, plus the computed distance and a small map with the property's pin.
-2. Notes: a free-text area, saved with a Save button (or on blur), no length limit beyond a sane cap of 10,000 characters.
-3. Discarded: a checkbox. When ticked, the property name on this page and in the list is struck through.
-4. Edit: the same fields as the add form can be changed; changing the address re-runs geocoding and distance.
-5. Delete: a button with a confirm prompt.
+Only on an existing property:
+
+8. Discarded: a checkbox just under the name. When ticked, the name is struck through and greyed, here and in the list. It is saved with Save.
+9. Distance to Deodar Street and a small map with the property's pin, the Deodar Street marker, and + and − zoom buttons. "Move pin" (or "Drop pin by hand" when there are no coordinates) lets the user tap the map; the new pin is saved with Save and wins over the address.
+10. Delete: a button next to Save, with a confirm prompt; it then goes back to the list like Save.
+11. An unknown id shows "Property not found." with a button back to the list.
 
 ### Map
 
 1. Shows every property with coordinates as a pin, plus a distinct marker for Deodar Street.
 2. The map zooms to fit all pins on load.
-3. Clicking a pin opens a popup with name, price, size, B(B) (e.g. "B(B) 3(2)") and a link to the detail page.
+3. Clicking a pin opens a popup with name, price, size, B(B) (e.g. "B(B) 3(2)") and an Open link to the property page.
 4. Discarded properties show as grey pins, hidden when the list's hide-discarded toggle is on.
 5. An Add property button floats over the bottom-left corner of the map and opens the add form.
 
@@ -85,7 +89,7 @@ One D1 table for the data, `flat` (migration `api/migrations/0001_create_flat.sq
 | listing_url | TEXT | Optional link to the original ad |
 | lat, lng | REAL | From geocoding or a manual pin; null if unknown |
 | distance_m | INTEGER | Computed and stored in metres, shown in the chosen unit |
-| notes | TEXT | Text area on the add form and detail page |
+| notes | TEXT | Text area on the property page |
 | discarded | INTEGER 0/1 | Default 0 |
 | created_at, updated_at | TEXT | ISO 8601 timestamps |
 
@@ -96,7 +100,7 @@ Distance is recomputed whenever the address, the pin or the reference point chan
 A single Cloudflare Worker serves the Flutter web app as static assets and a small JSON API, backed by one D1 database. See the README for the diagram.
 
 - **Frontend:** Flutter web app in `app/`, built with `flutter build web` and served from `app/build/web` by the Worker's static assets. Unknown paths fall back to `index.html` so Flutter does its own routing.
-- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. `GET /api/flats` and `POST /api/flats` exist so far. The Worker runs first on every path, so it can check the session and serve the login or error page.
+- **API:** `GET/POST /api/flats`, `GET/PATCH/DELETE /api/flats/:id`. The Worker runs first on every path, so it can check the session and serve the login or error page.
 - **Map:** OpenStreetMap tiles drawn with the `flutter_map` package. Free, no API key.
 - **Geocoding:** called from the Worker on save, never from the browser, so any key stays secret. OpenStreetMap Nominatim first (free, 1 request per second, needs an identifying User-Agent, which names only the app and its repository), then Photon (komoot, also OSM data, fuzzier) if Nominatim refuses or finds nothing. Messy addresses are cleaned (ward and P.S. labels, Old/New markers, landmarks and PIN codes dropped) and retried with progressively simpler queries, from street + locality down to the locality alone; a match more than 80 km from Deodar Street is ignored. Mapbox or Google are drop-in alternatives if accuracy is still poor.
 - **Distance:** straight-line (haversine) from the property to the Deodar Street reference point, stored in metres.

@@ -7,10 +7,12 @@
 // opened is a new entry (pushed during the click), and Back and Forward move
 // between those entries like on any web site.
 //
-// Pages navigate with [goTo], [replaceWith] and [resetTo].
+// Pages navigate with [goTo], [replaceWith], [resetTo] and [returnHome].
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'browser_back.dart';
 
 /// Where the app is: a path, and its position in the browser history.
 @immutable
@@ -174,5 +176,22 @@ void resetTo(BuildContext context, String path) {
     Navigator.of(context).pushNamedAndRemoveUntil(path, (_) => false);
   } else {
     Router.neglect(context, () => d.replace(path));
+  }
+}
+
+/// Goes one step back in the browser history. Tests replace it.
+@visibleForTesting
+void Function() browserBack = historyBack;
+
+/// Goes back to the list, e.g. after saving or deleting a flat. When the
+/// list is the page underneath, this is the browser's Back, so the history
+/// reads Home > page > Home with no extra entry; otherwise the list takes
+/// the place of this page.
+void returnHome(BuildContext context) {
+  final paths = _delegateOf(context)?.paths ?? const [];
+  if (paths.length >= 2 && paths[paths.length - 2] == '/home') {
+    browserBack();
+  } else {
+    resetTo(context, '/home');
   }
 }
